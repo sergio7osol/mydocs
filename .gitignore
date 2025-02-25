@@ -1,0 +1,9 @@
+# Citizenship Docs Project .gitignore
+
+/vendor/
+.env
+/storage/logs/
+/node_modules/
+.idea/
+
+# Add any custom ignore rules for Citizenship Docs below:

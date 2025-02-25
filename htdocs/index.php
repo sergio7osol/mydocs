@@ -1,24 +1,20 @@
 <?php
 
-include 'utils.php';
-include 'Database.php';
-// include 'router.php';
+// Basic front controller with simple routing
+$route = isset($_GET['route']) ? $_GET['route'] : 'list';
 
-$config = include 'config.php';
-
-$db = new Database($config['database']);
-
-$count = $_GET['count'];
-$query = "SELECT * FROM detailed_date_info where count = :count";
-
-$dates = $db->query($query, [':count' => $count])->fetchAll();
-
-// dd($dates);
-
-echo '<ol>';
-foreach ($dates as $date) {
-    echo '<li>' . $date['date'] . '</li>';
+switch($route){
+    case 'list': 
+        require_once 'controllers/DocumentController.php';
+        $controller = new DocumentController();
+        $controller->listDocuments();
+        break;
+    case 'upload':
+        require_once 'controllers/DocumentController.php';
+        $controller = new DocumentController();
+        $controller->uploadDocument();
+        break;
+    default:
+        include 'views/404.view.php';
+        break;
 }
-echo '</ol>';
-
-// dd($count);
