@@ -4,6 +4,17 @@ body {
     padding: 0;
 }
 
+.main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+}
+
 .main-header {
     padding: 0.5em;
     background-color: #333;
@@ -56,11 +67,12 @@ body {
 .sidebar {
     width: 200px;
     background: #f4f4f4;
-    padding: 1em;
+    padding: 1em 0;
 }
 
 .sidebar h2 {
     margin-top: 0;
+    padding: 0 1em;
 }
 
 .sidebar ul {
@@ -69,8 +81,8 @@ body {
 }
 
 .sidebar ul li {
-    margin-bottom: 0.5em;
     width: 100%;
+    border-bottom: 1px solid #ddd;
 }
 
 .sidebar ul li a {
@@ -78,11 +90,16 @@ body {
     color: #333;
     display: block;
     padding: 0.5em;
-    border-radius: 4px;
     transition: background-color 0.2s;
-    width: 100%;
     box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
     transition: box-shadow 0.2s;
+}
+
+.sidebar ul li a.active-category {
+    background-color: #4a6da7;
+    color: white;
+    box-shadow: 0 0 0 2px rgba(74, 109, 167, 0.3);
+    font-weight: bold;
 }
 
 .sidebar ul li a:hover {
@@ -173,38 +190,57 @@ body {
 
 .document-item {
     border: 1px solid #ddd;
-    padding: 0.8em;
-    border-radius: 4px;
+    margin-bottom: 0.5em;
+    padding: 1em;
     background: #fff;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: box-shadow 0.2s;
 }
 
 .document-item:hover {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     background-color: #f5f8ff;
     border-color: #4a6da7;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transform: translateY(-1px);
 }
 
 .document-item-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    position: relative;
+    min-height: 1.8em;
+    padding-right: 200px; /* Make space for absolute positioned elements */
 }
 
-.document-item h3 {
-    margin: 0;
-    font-size: 1.1em;
+.document-item-title-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.document-item-content h3 {
+    margin: 0 0 0.2em 0;
+    font-size: 1.2em;
     color: #4a6da7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .document-date {
-    font-size: 0.9em;
+    position: absolute;
+    left: 50%; /* Position for vertical alignment */
+    top: 0;
+    white-space: nowrap;
+}
+
+.document-category {
+    position: absolute;
+    right: 20px;
+    top: 0;
+    padding: 2px 6px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    font-size: 0.85em;
     color: #666;
     white-space: nowrap;
-    margin-left: 1em;
 }
 
 .document-item p {
@@ -284,4 +320,30 @@ body {
     color: #fff;
     background-color: #218838;
     border-color: #1e7e34;
+}
+
+.light-text {
+    color: #999;
+}
+
+/* Responsive adjustments for the sidebar */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        padding: 0.5em;
+    }
+    
+    .sidebar ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .sidebar ul li {
+        margin-bottom: 0;
+    }
 }

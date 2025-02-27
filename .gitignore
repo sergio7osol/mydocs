@@ -6,5 +6,10 @@
 /node_modules/
 .idea/
 PSD/
+uploads/
 
 # Add any custom ignore rules for Citizenship Docs below:
+
+# Log files
+htdocs/access.log
+htdocs/php_errors.log
