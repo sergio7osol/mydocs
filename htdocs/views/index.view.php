@@ -23,10 +23,45 @@ include 'partials/start.php';
   </ul>
 </aside>
 <main class="content">
+  <?php
+  // Ensure we're accurately counting documents 
+  $currentCategory = isset($_GET['category']) ? $_GET['category'] : '';
+  $documentCount = count($documents);
+  
+  // Debugging
+  error_log("Document count in view: " . $documentCount . " for user: " . $currentUserId . " and category: " . $currentCategory);
+  ?>
   <div class="content-header">
     <h1>Documents</h1>
     <?php if (isset($_GET['category'])): ?>
-      <h2>Category: <?= htmlspecialchars($_GET['category']) ?></h2>
+      <div class="category-header">
+        <h2>
+          Category: <?= htmlspecialchars($_GET['category']) ?>
+          <div class="document-counter">
+            <div class="document-counter-inner">
+              <span class="counter-number"><?= $documentCount ?></span>
+              <span class="counter-text">Documents</span>
+            </div>
+          </div>
+        </h2>
+        <div class="category-actions">
+          <a href="index.php?route=list&user_id=<?= $currentUserId ?>" class="btn btn-outline show-all-btn">
+            <i class="fa fa-times-circle"></i> Show All Documents
+          </a>
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="category-header">
+        <h2>
+          All Documents
+          <div class="document-counter">
+            <div class="document-counter-inner">
+              <span class="counter-number"><?= $documentCount ?></span>
+              <span class="counter-text">Documents</span>
+            </div>
+          </div>
+        </h2>
+      </div>
     <?php endif; ?>
     
     <!-- Search form -->
@@ -59,18 +94,7 @@ include 'partials/start.php';
 
   <div class="document-list" id="documentList">
     <?php if (!empty($documents)): ?>
-      <?php 
-        // Additional safeguard against duplicates in the view
-        $renderedDocIds = [];
-      ?>
       <?php foreach ($documents as $doc): ?>
-        <?php
-          // Skip if we've already rendered this document
-          if (isset($renderedDocIds[$doc['id']])) {
-            continue;
-          }
-          $renderedDocIds[$doc['id']] = true;
-        ?>
         <div class="document-item" data-id="<?= $doc['id'] ?>" data-user-id="<?= $currentUserId ?>">
           <a href="index.php?route=delete&id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?><?= isset($_GET['category']) && !empty($_GET['category']) ? '&category=' . htmlspecialchars($_GET['category']) : '' ?>" 
              class="delete-document" 
@@ -96,9 +120,19 @@ include 'partials/start.php';
         </div>
       <?php endforeach; ?>
     <?php elseif (isset($_GET['category'])): ?>
-      <p>No documents found in this category.</p>
+      <div class="empty-state">
+        <i class="fa fa-folder-open"></i>
+        <p>No documents found in category "<?= htmlspecialchars($_GET['category']) ?>".</p>
+        <p class="sub-message">Upload a document to this category to see it here.</p>
+        <a href="index.php?route=upload<?= isset($_GET['user_id']) ? '&user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
+      </div>
     <?php else: ?>
-      <p>No documents found. Upload some documents to get started.</p>
+      <div class="empty-state">
+        <i class="fa fa-file-o"></i>
+        <p>No documents found.</p>
+        <p class="sub-message">Start by uploading a document using the form below.</p>
+        <a href="index.php?route=upload<?= isset($_GET['user_id']) ? '&user_id=' . $_GET['user_id'] : '' ?>" class="btn btn-primary">Upload a document</a>
+      </div>
     <?php endif; ?>
   </div>
 </main>

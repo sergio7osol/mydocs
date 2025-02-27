@@ -126,8 +126,13 @@ class Document {
         
         $query .= " ORDER BY upload_date DESC";
         
-        $statement = self::$db->query($query, $params);
-        return $statement->fetchAll();
+        try {
+            $statement = self::$db->query($query, $params);
+            $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+            return $results;
+        } catch (Exception $e) {
+            throw $e;
+        }
     }
 
     // Get document by ID

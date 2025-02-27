@@ -6,66 +6,47 @@ class DocumentController {
     {
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
         
-        $category = isset($_GET['category']) ? $_GET['category'] : '';
+        $this->checkPermissions($userId);
+
+        // Clear any document caches
+        self::clearDocumentCache();
         
-        error_log("Loading documents for user ID: " . $userId . ", category: " . $category);
-        
-        $documents = [];
-        
+        // Import any new documents from filesystem into database
+        $this->importFilesystemDocuments($userId);
+
+        // Get documents from database - database is the single source of truth
         try {
-            // Get documents from database based on whether a category is selected
-            if (!empty($category)) {
-                // Get documents for the specific category
-                $documents = Document::getByCategory($category, $userId);
-                error_log("Found " . count($documents) . " documents in database for user " . $userId . " in category " . $category);
-            } else {
-                // Get all documents if no category is specified
-                $documents = Document::getAll($userId);
-                error_log("Found " . count($documents) . " documents in database for user " . $userId);
-            }
+            // Get documents directly from the database
+            $documents = Document::getAll($userId);
             
-            // If no documents in database yet, scan filesystem as fallback
-            if (empty($documents)) {
-                $documents = $this->scanForDocuments($userId);
-                error_log("Using " . count($documents) . " documents from filesystem for user " . $userId);
-            }
         } catch (Exception $e) {
-            // If database access fails, fall back to filesystem scan
-            error_log("Database error: " . $e->getMessage());
-            $documents = $this->scanForDocuments($userId);
+            error_log("Error fetching documents from DB: " . $e->getMessage());
+            $documents = [];
         }
-        
-        // Ensure we have the minimum document fields needed for display
-        foreach ($documents as &$doc) {
-            if (!isset($doc['upload_date']) && isset($doc['date'])) {
-                $doc['upload_date'] = $doc['date'];
-            }
-            
-            if (!isset($doc['title'])) {
-                $doc['title'] = $doc['filename'] ?? 'Untitled Document';
-            }
+
+        // Filter by category if selected
+        $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
+        if (!empty($selectedCategory)) {
+            $documents = array_filter($documents, function($doc) use ($selectedCategory) {
+                return strcasecmp($doc['category'], $selectedCategory) === 0;
+            });
         }
-        
-        // Remove duplicates by keeping track of seen IDs
-        $uniqueDocuments = [];
-        $seenIds = [];
-        $seenTitles = []; // Track title+user+date combinations to catch duplicates with different IDs
-        
-        foreach ($documents as $doc) {
-            $titleUserKey = $doc['title'] . '|' . $userId . '|' . $doc['upload_date'];
-            
-            // Check both ID and title+user+date combinations
-            if (!isset($seenIds[$doc['id']]) && !isset($seenTitles[$titleUserKey])) {
-                $uniqueDocuments[] = $doc;
-                $seenIds[$doc['id']] = true;
-                $seenTitles[$titleUserKey] = true;
-            } else {
-                error_log("Removed duplicate document with ID: " . $doc['id'] . ", Title: " . $doc['title']);
-            }
+
+        // Filter by search term if provided
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
+            $searchTerm = $_GET['search'];
+            $documents = array_filter($documents, function($doc) use ($searchTerm) {
+                return (
+                    stripos($doc['title'], $searchTerm) !== false ||
+                    stripos($doc['description'], $searchTerm) !== false ||
+                    stripos($doc['filename'], $searchTerm) !== false
+                );
+            });
         }
-        
-        $documents = $uniqueDocuments;
-        
+
+        // Pass the correct current user ID
+        $currentUserId = $userId;
+
         include 'views/index.view.php';
     }
     
@@ -79,20 +60,6 @@ class DocumentController {
         $documents = [];
         // Define the upload directory
         $uploadDir = 'uploads/' . $userId . '/';
-        
-        // Simulated documents to show if no real uploads exist
-        $simulatedDocs = [
-            1 => [
-                ['id' => 1, 'title' => 'Document A.pdf', 'upload_date' => '2025-02-20', 'category' => 'Personal', 'user_id' => 1],
-                ['id' => 2, 'title' => 'Document B.doc', 'upload_date' => '2025-02-21', 'category' => 'Work', 'user_id' => 1],
-                ['id' => 3, 'title' => 'Document C.txt', 'upload_date' => '2025-02-22', 'category' => 'Others', 'user_id' => 1]
-            ],
-            2 => [
-                ['id' => 4, 'title' => 'Recipe Collection.pdf', 'upload_date' => '2025-02-18', 'category' => 'Personal', 'user_id' => 2],
-                ['id' => 5, 'title' => 'Project Notes.doc', 'upload_date' => '2025-02-19', 'category' => 'Work', 'user_id' => 2],
-                ['id' => 6, 'title' => 'Shopping List.txt', 'upload_date' => '2025-02-23', 'category' => 'Others', 'user_id' => 2]
-            ]
-        ];
         
         // Get the requested category if any
         $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
@@ -110,22 +77,6 @@ class DocumentController {
                 foreach ($categoryDirs as $categoryDir) {
                     $categoryName = basename($categoryDir);
                     $documents = array_merge($documents, $this->scanCategoryDirectory($categoryDir . '/', $categoryName, $userId));
-                }
-            }
-        }
-        
-        // If no documents found from real files, use simulated data
-        if (empty($documents)) {
-            if (isset($simulatedDocs[$userId])) {
-                $allDocs = $simulatedDocs[$userId];
-                
-                // If a category is specified, filter the simulated docs by that category
-                if (!empty($selectedCategory)) {
-                    $documents = array_filter($allDocs, function($doc) use ($selectedCategory) {
-                        return $doc['category'] === $selectedCategory;
-                    });
-                } else {
-                    $documents = $allDocs; // Use all docs if no category specified
                 }
             }
         }
@@ -152,6 +103,10 @@ class DocumentController {
         $documents = [];
         $files = glob($directory . '*.{pdf,doc,docx,txt}', GLOB_BRACE);
         
+        // Debug log for scanning directory
+        error_log("Scanning directory: {$directory} for user {$userId} in category {$category}");
+        error_log("Found " . count($files) . " files in {$directory}");
+        
         foreach ($files as $file) {
             $fileName = basename($file);
             $filePath = $file;
@@ -171,19 +126,47 @@ class DocumentController {
                 $uploadDate = date('Y-m-d', $fileModified);
             }
             
-            $documents[] = [
-                'id' => md5($filePath), // Use file path hash as unique ID
+            // Use consistent category capitalization - important for SQL filtering later
+            $normalizedCategory = ucfirst(strtolower($category));
+            
+            // IMPORTANT: Use path-based ID to ensure consistency and match the database ID format
+            $docId = md5($filePath);
+            
+            $doc = [
+                'id' => $docId, // Use file path hash as unique ID
                 'title' => $title,
                 'filename' => $fileName,
                 'file_path' => $filePath,
                 'file_size' => $fileSize,
                 'upload_date' => $uploadDate,
-                'category' => $category,
+                'category' => $normalizedCategory,
                 'user_id' => $userId
             ];
+            
+            error_log("Found document: {$title} in category {$normalizedCategory} with ID {$docId}");
+            $documents[] = $doc;
         }
         
         return $documents;
+    }
+
+    /**
+     * Check user permissions for accessing documents
+     * 
+     * @param int $userId User ID to check permissions for
+     * @return void
+     */
+    private function checkPermissions($userId) {
+        // For now, just ensure the user ID is valid
+        if (!is_numeric($userId) || $userId <= 0) {
+            error_log("Invalid user ID: " . $userId);
+            header('Location: index.php?error=invalid_user');
+            exit;
+        }
+        
+        // In the future, we could check if the current user has permission to view this user's documents
+        // For now, we're allowing all users to view all documents
+        return true;
     }
 
     public function showUploadForm() {
@@ -423,6 +406,212 @@ class DocumentController {
         $category = isset($_GET['category']) ? '&category=' . urlencode($_GET['category']) : '';
         header('Location: index.php?user_id=' . $userId . $category);
         exit;
+    }
+    
+    /**
+     * Scan for documents for a user - can be called from header
+     * Public version of scanForDocuments to use from the header
+     * 
+     * @param int $userId The user ID
+     * @return array List of documents
+     */
+    public function scanForDocumentsInternal($userId) {
+        return $this->scanForDocuments($userId);
+    }
+    
+    /**
+     * Count actual documents for a user, used for accurate header counts
+     * 
+     * @param int $userId The user ID
+     * @return int The count of documents
+     */
+    public static function countUserDocuments($userId) {
+        try {
+            // Get documents from database only
+            $docs = Document::getAll($userId);
+            
+            // Deduplicate by ID
+            $uniqueIds = [];
+            foreach ($docs as $doc) {
+                $docId = is_array($doc) ? $doc['id'] : $doc->id;
+                $uniqueIds[$docId] = true;
+            }
+            
+            $count = count($uniqueIds);
+            error_log("User {$userId} document count from database: {$count}");
+            return $count;
+        } catch (Exception $e) {
+            error_log("Error counting documents for user {$userId}: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Clear any document caches 
+     * 
+     * @return void
+     */
+    public static function clearDocumentCache() {
+        // If we implement caching in the future, clear it here
+        // For now, just log that we're ensuring fresh document data
+        error_log("Document cache cleared to ensure fresh data");
+    }
+    
+    /**
+     * Import documents from filesystem into database
+     * 
+     * @param int $userId The user ID to import documents for
+     * @return int The number of documents imported
+     */
+    public function importFilesystemDocuments($userId = null) {
+        if ($userId === null) {
+            $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
+        }
+        
+        $this->checkPermissions($userId);
+        
+        $importCount = 0;
+        $categories = ['Personal', 'Work', 'Others']; // Standard categories with proper casing
+        $categoryMap = [];
+        
+        // Create mapping of lowercase category names to standard capitalization
+        foreach ($categories as $category) {
+            $categoryMap[strtolower($category)] = $category;
+        }
+        
+        // Scan filesystem for documents
+        $filesystemDocs = $this->scanForDocuments($userId);
+        error_log("Found " . count($filesystemDocs) . " documents in filesystem for user {$userId}");
+        
+        // Get existing database documents to avoid duplicates
+        $dbDocs = Document::getAll($userId);
+        $existingDocIds = [];
+        foreach ($dbDocs as $doc) {
+            $docId = is_array($doc) ? $doc['id'] : $doc->id;
+            $existingDocIds[$docId] = true;
+        }
+        
+        // Import new documents into database
+        foreach ($filesystemDocs as $doc) {
+            if (!isset($existingDocIds[$doc['id']])) {
+                // Standardize category capitalization
+                $lowercaseCategory = strtolower($doc['category']);
+                if (isset($categoryMap[$lowercaseCategory])) {
+                    $doc['category'] = $categoryMap[$lowercaseCategory];
+                }
+                
+                // Create a new document object - leave description as NULL
+                $document = new Document(
+                    $doc['id'],
+                    $doc['title'],
+                    null, // NULL description as requested
+                    $doc['upload_date'],
+                    $doc['created_date'] ?? null,
+                    $doc['category'],
+                    $doc['file_path'],
+                    $doc['filename'],
+                    $doc['file_size'],
+                    $doc['file_type'] ?? '',
+                    $doc['user_id']
+                );
+                
+                // Save to database
+                try {
+                    $document->save();
+                    $importCount++;
+                    error_log("Imported document: " . $doc['title'] . " (ID: " . $doc['id'] . ")");
+                } catch (Exception $e) {
+                    error_log("Error importing document " . $doc['title'] . ": " . $e->getMessage());
+                }
+            }
+        }
+        
+        error_log("Imported {$importCount} new documents from filesystem to database");
+        return $importCount;
+    }
+    
+    /**
+     * Repair and normalize document categories in the database
+     * 
+     * @param int $userId The user ID to repair documents for
+     * @return int Number of documents repaired
+     */
+    public function repairDocumentCategories($userId = null) {
+        if ($userId === null) {
+            $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
+        }
+        
+        $this->checkPermissions($userId);
+        
+        // Get documents from database
+        try {
+            $documents = Document::getAll($userId);
+            error_log("Found " . count($documents) . " documents to check for category repair");
+            
+            $repairedCount = 0;
+            $standardCategories = ['Personal', 'Work', 'Others'];
+            $categoryMap = [];
+            
+            // Create mapping of lowercase category names to standard capitalization
+            foreach ($standardCategories as $category) {
+                $categoryMap[strtolower($category)] = $category;
+            }
+            
+            // Repair each document's category
+            foreach ($documents as $doc) {
+                if (!is_array($doc)) {
+                    // Convert object to array for consistent handling
+                    $doc = [
+                        'id' => $doc->id,
+                        'title' => $doc->title,
+                        'category' => $doc->category,
+                        // other fields would be here
+                        'user_id' => $doc->user_id
+                    ];
+                }
+                
+                $originalCategory = $doc['category'];
+                $lowercaseCategory = strtolower($originalCategory);
+                
+                // Check if this category needs standardization
+                if (isset($categoryMap[$lowercaseCategory]) && $categoryMap[$lowercaseCategory] !== $originalCategory) {
+                    $standardizedCategory = $categoryMap[$lowercaseCategory];
+                    
+                    // Update the document with the standardized category
+                    try {
+                        // If we have the full document object, create and save it
+                        $document = new Document(
+                            $doc['id'], 
+                            $doc['title'],
+                            $doc['description'] ?? null,
+                            $doc['upload_date'] ?? '',
+                            $doc['created_date'] ?? null,
+                            $standardizedCategory, // Standardized category
+                            $doc['file_path'] ?? '',
+                            $doc['filename'] ?? '',
+                            $doc['file_size'] ?? 0,
+                            $doc['file_type'] ?? '',
+                            $doc['user_id']
+                        );
+                        
+                        // Save the updated document
+                        $document->save();
+                        $repairedCount++;
+                        
+                        error_log("Repaired document category: '{$doc['title']}' from '{$originalCategory}' to '{$standardizedCategory}'");
+                    } catch (Exception $e) {
+                        error_log("Error repairing document category: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            error_log("Repaired {$repairedCount} document categories");
+            return $repairedCount;
+            
+        } catch (Exception $e) {
+            error_log("Error getting documents for category repair: " . $e->getMessage());
+            return 0;
+        }
     }
     
     /**
