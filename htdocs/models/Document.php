@@ -5,6 +5,7 @@ class Document {
     public $title;
     public $description; 
     public $upload_date;  // Changed from date
+    public $created_date; // The date the document was created (not when it was uploaded)
     public $category;
     public $file_path;    // Changed from filepath
     public $filename;
@@ -14,11 +15,12 @@ class Document {
 
     private static $db;
 
-    public function __construct($id = null, $title = '', $description = '', $upload_date = '', $category = '', $file_path = '', $filename = '', $file_size = 0, $file_type = '', $user_id = 'sergey') {
+    public function __construct($id = null, $title = '', $description = '', $upload_date = '', $created_date = null, $category = '', $file_path = '', $filename = '', $file_size = 0, $file_type = '', $user_id = 1) {
         $this->id = $id;
         $this->title = $title;
         $this->description = $description;
         $this->upload_date = $upload_date;
+        $this->created_date = $created_date;
         $this->category = $category;
         $this->file_path = $file_path;
         $this->filename = $filename;
@@ -43,7 +45,8 @@ class Document {
             $query = "UPDATE documents SET 
                         title = :title, 
                         description = :description,
-                        upload_date = :upload_date, 
+                        upload_date = :upload_date,
+                        created_date = :created_date,
                         category = :category, 
                         file_path = :file_path,
                         filename = :filename,
@@ -56,6 +59,7 @@ class Document {
                 ':title' => $this->title,
                 ':description' => $this->description,
                 ':upload_date' => $this->upload_date,
+                ':created_date' => $this->created_date,
                 ':category' => $this->category,
                 ':file_path' => $this->file_path,
                 ':filename' => $this->filename,
@@ -65,12 +69,13 @@ class Document {
             ];
         } else {
             // Insert new record
-            $query = "INSERT INTO documents (title, description, upload_date, category, file_path, filename, file_size, file_type, user_id) 
-                      VALUES (:title, :description, :upload_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
+            $query = "INSERT INTO documents (title, description, upload_date, created_date, category, file_path, filename, file_size, file_type, user_id) 
+                      VALUES (:title, :description, :upload_date, :created_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
             $params = [
                 ':title' => $this->title,
                 ':description' => $this->description,
                 ':upload_date' => $this->upload_date ? $this->upload_date : date('Y-m-d H:i:s'),
+                ':created_date' => $this->created_date,
                 ':category' => $this->category,
                 ':file_path' => $this->file_path,
                 ':filename' => $this->filename,
@@ -99,8 +104,24 @@ class Document {
         $params = [];
         
         if ($user) {
-            $query .= " WHERE user_id = :user_id";
-            $params[':user_id'] = $user;
+            // Handle both user ID (number) and legacy username (string)
+            if (is_numeric($user)) {
+                $query .= " WHERE user_id = :user_id";
+                $params[':user_id'] = $user;
+            } else {
+                // Try to find the user ID by name/email for backward compatibility
+                try {
+                    require_once 'User.php';
+                    User::setDatabase(self::$db);
+                    $userId = User::findUserIdByName($user);
+                    if ($userId) {
+                        $query .= " WHERE user_id = :user_id";
+                        $params[':user_id'] = $userId;
+                    }
+                } catch (Exception $e) {
+                    // If user lookup fails, don't filter by user
+                }
+            }
         }
         
         $query .= " ORDER BY upload_date DESC";
@@ -110,12 +131,21 @@ class Document {
     }
 
     // Get document by ID
-    public static function getById($id) {
+    public static function getById($id, $userId = null) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
         }
 
-        $statement = self::$db->query("SELECT * FROM documents WHERE id = :id", [':id' => $id]);
+        $query = "SELECT * FROM documents WHERE id = :id";
+        $params = [':id' => $id];
+        
+        // If user ID is provided, ensure the document belongs to the user
+        if ($userId !== null) {
+            $query .= " AND user_id = :user_id";
+            $params[':user_id'] = $userId;
+        }
+        
+        $statement = self::$db->query($query, $params);
         $data = $statement->fetch();
         
         if (!$data) {
@@ -127,6 +157,7 @@ class Document {
             $data['title'],
             $data['description'],
             $data['upload_date'],
+            $data['created_date'],
             $data['category'],
             $data['file_path'],
             $data['filename'],
@@ -146,8 +177,24 @@ class Document {
         $params = [':category' => $category];
         
         if ($user) {
-            $query .= " AND user_id = :user_id";
-            $params[':user_id'] = $user;
+            // Handle both user ID (number) and legacy username (string)
+            if (is_numeric($user)) {
+                $query .= " AND user_id = :user_id";
+                $params[':user_id'] = $user;
+            } else {
+                // Try to find the user ID by name for backward compatibility
+                try {
+                    require_once 'User.php';
+                    User::setDatabase(self::$db);
+                    $userId = User::findUserIdByName($user);
+                    if ($userId) {
+                        $query .= " AND user_id = :user_id";
+                        $params[':user_id'] = $userId;
+                    }
+                } catch (Exception $e) {
+                    // If user lookup fails, don't filter by user
+                }
+            }
         }
         
         $query .= " ORDER BY upload_date DESC";
@@ -172,5 +219,18 @@ class Document {
         // Delete from database
         $statement = self::$db->query("DELETE FROM documents WHERE id = :id", [':id' => $id]);
         return $statement->rowCount() > 0;
+    }
+
+    // Check if documents exist in the database
+    public static function hasDocuments() {
+        if (!self::$db) {
+            throw new Exception("Database connection not established");
+        }
+
+        $query = "SELECT COUNT(*) as count FROM documents";
+        $statement = self::$db->query($query);
+        $result = $statement->fetch();
+        
+        return $result['count'] > 0;
     }
 }

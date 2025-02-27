@@ -1,44 +1,64 @@
 <?php
 
-// Check if running in Docker environment
-// If inside nginx/PHP container, set Docker env
+include('error_log.php');
+// include('debug.php'); // Comment out debug helpers for now
+
+// Add cache control headers to prevent browser caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
 if (file_exists('/.dockerenv') || getenv('DOCKER_ENV') === 'true') {
     putenv('DOCKER_ENV=true');
 }
 
-// Load config and database
 require_once 'Database.php';
 require_once 'models/Document.php';
+require_once 'models/User.php';
 
 // Initialize database connection
 $config = require 'config.php';
 $db = new Database($config['database']);
 
-// Set the database connection for the Document model
+// Set the database connection for the models
 Document::setDatabase($db);
+User::setDatabase($db);
 
-// Basic front controller with simple routing
+// Add a simple log entry for requests
+file_put_contents(__DIR__ . '/access.log', 
+    date('[Y-m-d H:i:s]') . ' ' . 
+    $_SERVER['REQUEST_METHOD'] . ' ' . 
+    $_SERVER['REQUEST_URI'] . ' ' . 
+    'GET: ' . json_encode($_GET) . "\n", 
+    FILE_APPEND
+);
+
 $route = isset($_GET['route']) ? $_GET['route'] : 'list';
 
 switch($route){
     case 'list': 
         require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController();
+        $controller = new DocumentController($db);
         $controller->listDocuments();
         break;
     case 'upload':
         require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController();
+        $controller = new DocumentController($db);
+        $controller->showUploadForm();
+        break;
+    case 'upload_post':
+        require_once 'controllers/DocumentController.php';
+        $controller = new DocumentController($db);
         $controller->uploadDocument();
         break;
     case 'view':
         require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController();
+        $controller = new DocumentController($db);
         $controller->viewDocument();
         break;
     case 'download':
         require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController();
+        $controller = new DocumentController($db);
         $controller->downloadDocument();
         break;
     default:

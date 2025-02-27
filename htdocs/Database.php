@@ -40,7 +40,6 @@ class Database
             $statement->execute($params);
             return $statement;
         } catch (PDOException $e) {
-            // Log the query that failed
             error_log("Query failed: " . $query);
             error_log("Error: " . $e->getMessage());
             
@@ -81,5 +80,32 @@ class Database
     public function rollBack()
     {
         return $this->connection->rollBack();
+    }
+    
+    /**
+     * Execute a query that doesn't return results (INSERT, UPDATE, DELETE)
+     */
+    public function execute($query, $params = [])
+    {
+        $statement = $this->query($query, $params);
+        return $statement->rowCount();
+    }
+    
+    /**
+     * Select records from the database
+     */
+    public function select($query, $params = [])
+    {
+        $statement = $this->query($query, $params);
+        return $statement->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Insert a record and return the last insert ID
+     */
+    public function insert($query, $params = [])
+    {
+        $this->query($query, $params);
+        return $this->connection->lastInsertId();
     }
 }

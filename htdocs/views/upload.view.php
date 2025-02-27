@@ -27,6 +27,11 @@ $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
       </select>
     </div>
     <div style="margin-bottom: 1em;">
+      <label for="created_date">Document Creation Date (optional):</label>
+      <input type="date" name="created_date" id="created_date" style="margin-top: 0.5em; width: 100%; padding: 0.5em;">
+      <small style="color: #666; display: block; margin-top: 0.3em;">The date when this document was originally created (not when you're uploading it)</small>
+    </div>
+    <div style="margin-bottom: 1em;">
       <label for="description">Description (optional):</label>
       <textarea name="description" id="description" style="margin-top: 0.5em; width: 100%; padding: 0.5em; height: 80px;"></textarea>
     </div>

@@ -243,3 +243,45 @@ body {
 .user-button {
     transition: all 0.2s ease;
 }
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    margin: 0 0.5rem;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #4a6da7;
+    border-color: #4a6da7;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color: #3c598c;
+    border-color: #385483;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    color: #fff;
+    background-color: #218838;
+    border-color: #1e7e34;
+}

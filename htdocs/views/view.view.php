@@ -18,7 +18,10 @@ try {
   <?php if (isset($document) && $document): ?>
     <div class="document-details">
       <h2><?= htmlspecialchars($document['title']); ?></h2>
-      <p><strong>Date:</strong> <?= htmlspecialchars($document['upload_date']); ?></p>
+      <p><strong>Upload Date:</strong> <?= htmlspecialchars($document['upload_date']); ?></p>
+      <?php if (!empty($document['created_date'])): ?>
+      <p><strong>Document Creation Date:</strong> <?= htmlspecialchars($document['created_date']); ?></p>
+      <?php endif; ?>
       <p><strong>Category:</strong> <?= htmlspecialchars($document['category']); ?></p>
       <p><strong>Owner:</strong> 
         <?php 

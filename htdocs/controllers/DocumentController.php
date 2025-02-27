@@ -4,20 +4,49 @@ class DocumentController {
 
     public function listDocuments()
     {
-        $user = isset($_GET['user']) ? $_GET['user'] : 'sergey';
+        // Get user ID, either from GET parameter or use default (Sergey, ID 1)
+        $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
+        
+        // Get category from either GET 
+        $category = isset($_GET['category']) ? $_GET['category'] : '';
+        
+        // Add debug info to help troubleshoot
+        error_log("Loading documents for user ID: " . $userId . ", category: " . $category);
+        
         $documents = [];
         
         try {
-            // Get documents from database using the Document model
-            $documents = Document::getAll($user);
+            // Get documents from database based on whether a category is selected
+            if (!empty($category)) {
+                // Get documents for the specific category
+                $documents = Document::getByCategory($category, $userId);
+                error_log("Found " . count($documents) . " documents in database for user " . $userId . " in category " . $category);
+            } else {
+                // Get all documents if no category is specified
+                $documents = Document::getAll($userId);
+                error_log("Found " . count($documents) . " documents in database for user " . $userId);
+            }
             
             // If no documents in database yet, scan filesystem as fallback
             if (empty($documents)) {
-                $documents = $this->scanForDocuments($user);
+                $documents = $this->scanForDocuments($userId);
+                error_log("Using " . count($documents) . " documents from filesystem for user " . $userId);
             }
         } catch (Exception $e) {
             // If database access fails, fall back to filesystem scan
-            $documents = $this->scanForDocuments($user);
+            error_log("Database error: " . $e->getMessage());
+            $documents = $this->scanForDocuments($userId);
+        }
+        
+        // Ensure we have the minimum document fields needed for display
+        foreach ($documents as &$doc) {
+            if (!isset($doc['upload_date']) && isset($doc['date'])) {
+                $doc['upload_date'] = $doc['date'];
+            }
+            
+            if (!isset($doc['title'])) {
+                $doc['title'] = $doc['filename'] ?? 'Untitled Document';
+            }
         }
         
         include 'views/index.view.php';
@@ -26,60 +55,66 @@ class DocumentController {
     /**
      * Scan the filesystem for documents
      * 
-     * @param string $user The user name
+     * @param int $userId The user ID
      * @return array List of documents
      */
-    private function scanForDocuments($user) {
+    private function scanForDocuments($userId) {
+        $documents = [];
         // Define the upload directory
-        $uploadDir = 'uploads/' . $user . '/';
+        $uploadDir = 'uploads/' . $userId . '/';
         
         // Simulated documents to show if no real uploads exist
         $simulatedDocs = [
-            'sergey' => [
-                ['id' => 1, 'title' => 'Document A.pdf', 'date' => '2025-02-20', 'category' => 'Personal', 'user' => 'sergey'],
-                ['id' => 2, 'title' => 'Document B.doc', 'date' => '2025-02-21', 'category' => 'Work', 'user' => 'sergey'],
-                ['id' => 3, 'title' => 'Document C.txt', 'date' => '2025-02-22', 'category' => 'Others', 'user' => 'sergey']
+            1 => [
+                ['id' => 1, 'title' => 'Document A.pdf', 'upload_date' => '2025-02-20', 'category' => 'Personal', 'user_id' => 1],
+                ['id' => 2, 'title' => 'Document B.doc', 'upload_date' => '2025-02-21', 'category' => 'Work', 'user_id' => 1],
+                ['id' => 3, 'title' => 'Document C.txt', 'upload_date' => '2025-02-22', 'category' => 'Others', 'user_id' => 1]
             ],
-            'galina' => [
-                ['id' => 4, 'title' => 'Recipe Collection.pdf', 'date' => '2025-02-18', 'category' => 'Personal', 'user' => 'galina'],
-                ['id' => 5, 'title' => 'Project Notes.doc', 'date' => '2025-02-19', 'category' => 'Work', 'user' => 'galina'],
-                ['id' => 6, 'title' => 'Shopping List.txt', 'date' => '2025-02-23', 'category' => 'Others', 'user' => 'galina']
+            2 => [
+                ['id' => 4, 'title' => 'Recipe Collection.pdf', 'upload_date' => '2025-02-18', 'category' => 'Personal', 'user_id' => 2],
+                ['id' => 5, 'title' => 'Project Notes.doc', 'upload_date' => '2025-02-19', 'category' => 'Work', 'user_id' => 2],
+                ['id' => 6, 'title' => 'Shopping List.txt', 'upload_date' => '2025-02-23', 'category' => 'Others', 'user_id' => 2]
             ]
         ];
+        
+        // Get the requested category if any
+        $selectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
         
         // Check if user directory exists
         if (file_exists($uploadDir)) {
             // If a category is specified, only look in that category folder
-            if (isset($_GET['category']) && file_exists($uploadDir . $_GET['category'])) {
-                $documents = array_merge($documents, $this->scanCategoryDirectory($uploadDir . $_GET['category'] . '/', $_GET['category'], $user));
+            if (!empty($selectedCategory) && file_exists($uploadDir . $selectedCategory)) {
+                $documents = array_merge($documents, $this->scanCategoryDirectory($uploadDir . $selectedCategory . '/', $selectedCategory, $userId));
             } 
             // If no category is specified, scan all category folders
-            elseif (!isset($_GET['category'])) {
+            elseif (empty($selectedCategory)) {
                 // Get all subdirectories (categories)
                 $categoryDirs = glob($uploadDir . '*', GLOB_ONLYDIR);
                 foreach ($categoryDirs as $categoryDir) {
                     $categoryName = basename($categoryDir);
-                    $documents = array_merge($documents, $this->scanCategoryDirectory($categoryDir . '/', $categoryName, $user));
+                    $documents = array_merge($documents, $this->scanCategoryDirectory($categoryDir . '/', $categoryName, $userId));
                 }
             }
         }
         
         // If no documents found from real files, use simulated data
         if (empty($documents)) {
-            if (isset($simulatedDocs[$user])) {
-                $documents = $simulatedDocs[$user];
+            if (isset($simulatedDocs[$userId])) {
+                $allDocs = $simulatedDocs[$userId];
+                
+                // If a category is specified, filter the simulated docs by that category
+                if (!empty($selectedCategory)) {
+                    $documents = array_filter($allDocs, function($doc) use ($selectedCategory) {
+                        return $doc['category'] === $selectedCategory;
+                    });
+                } else {
+                    $documents = $allDocs; // Use all docs if no category specified
+                }
             }
         }
 
-        // Filter by category if specified
-        if (isset($_GET['category'])) {
-            $documents = array_filter($documents, function($doc) {
-                return $doc['category'] === $_GET['category'];
-            });
-        }
-
         // Filter by search term if specified
-        if (isset($_GET['search'])) {
+        if (isset($_GET['search']) && !empty($_GET['search'])) {
             $documents = array_filter($documents, function($doc) {
                 return stripos($doc['title'], $_GET['search']) !== false;
             });
@@ -93,10 +128,10 @@ class DocumentController {
      * 
      * @param string $directory The directory path to scan
      * @param string $category The category name
-     * @param string $user The user name
+     * @param int $userId The user ID
      * @return array List of documents
      */
-    private function scanCategoryDirectory($directory, $category, $user) {
+    private function scanCategoryDirectory($directory, $category, $userId) {
         $documents = [];
         $files = glob($directory . '*.{pdf,doc,docx,txt}', GLOB_BRACE);
         
@@ -125,273 +160,151 @@ class DocumentController {
                 'filename' => $fileName,
                 'file_path' => $filePath,
                 'file_size' => $fileSize,
-                'date' => $uploadDate,
+                'upload_date' => $uploadDate,
                 'category' => $category,
-                'user' => $user
+                'user_id' => $userId
             ];
         }
         
         return $documents;
     }
 
+    public function showUploadForm() {
+        $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
+        require 'views/upload.view.php';
+    }
+
     public function uploadDocument() {
+        $title = isset($_POST['title']) ? $_POST['title'] : '';
+        $description = isset($_POST['description']) ? $_POST['description'] : '';
+        $category = isset($_POST['category']) ? $_POST['category'] : 'Personal';
+        $userId = isset($_POST['user_id']) ? $_POST['user_id'] : 1; // Default to user ID 1 (Sergey)
+        $createdDate = isset($_POST['created_date']) && !empty($_POST['created_date']) ? $_POST['created_date'] : null;
+        
+        // Get user object for validation
+        $user = User::getById($userId);
+        if (!$user) {
+            $user = User::getDefault(); // Fallback to default user
+            $userId = $user->id;
+        }
+        
+        $uploadFile = isset($_FILES['document']) ? $_FILES['document'] : null;
         $message = '';
-        $success = false;
-        $document = null;
         
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Check if file was uploaded without errors
-            if (isset($_FILES['document']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
-                try {
-                    $fileInfo = $_FILES['document'];
-                    $title = isset($_POST['title']) ? trim($_POST['title']) : pathinfo($fileInfo['name'], PATHINFO_FILENAME);
-                    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
-                    $category = isset($_POST['category']) ? trim($_POST['category']) : 'Others';
-                    $user = isset($_POST['user']) ? trim($_POST['user']) : 'sergey';
-                    
-                    // Validate file type
-                    $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-                    $fileType = mime_content_type($fileInfo['tmp_name']);
-                    
-                    if (!in_array($fileType, $allowedTypes)) {
-                        throw new Exception('Invalid file type. Only PDF, DOC, DOCX, and TXT files are allowed.');
-                    }
-                    
-                    // Validate file size (max 5MB)
-                    $maxSize = 5 * 1024 * 1024; // 5MB
-                    if ($fileInfo['size'] > $maxSize) {
-                        throw new Exception('File size exceeds the maximum limit of 5MB.');
-                    }
-                    
-                    // Create user/category upload directory if it doesn't exist
-                    $uploadDir = 'uploads/' . $user . '/' . $category . '/';
-                    if (!file_exists($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
-                    
-                    // Generate a unique filename to avoid overwriting
-                    $timestamp = time();
-                    $extension = pathinfo($fileInfo['name'], PATHINFO_EXTENSION);
-                    $originalName = pathinfo($fileInfo['name'], PATHINFO_FILENAME);
-                    $safeTitle = preg_replace('/[^a-zA-Z0-9_-]/', '_', $title);
-                    $uniqueFilename = $timestamp . '_' . $safeTitle . '.' . $extension;
-                    $filePath = $uploadDir . $uniqueFilename;
-                    
-                    // Move uploaded file to destination
-                    if (move_uploaded_file($fileInfo['tmp_name'], $filePath)) {
-                        // Create a new Document object and save to database
-                        $document = new Document(
-                            null,                            // id (will be assigned by database)
-                            $title,                          // title
-                            $description,                    // description
-                            date('Y-m-d'),                   // date
-                            $category,                       // category
-                            $filePath,                       // filepath
-                            $uniqueFilename,                 // filename
-                            $fileInfo['size'],               // file_size
-                            $user                            // user
-                        );
-                        
-                        // Save to database
-                        $document->save();
-                        
-                        // Set success message
-                        $success = true;
-                        $message = 'Document uploaded successfully.';
-                        
-                        // Include details for success view
-                        $fileName = $title;
-                        $fileDate = date('Y-m-d');
-                        $fileCategory = $category;
-                        $fileSize = $this->formatFileSize($fileInfo['size']);
-                        $fileId = $document->id;
-                        
-                        include 'views/upload_success.view.php';
-                        return;
-                    } else {
-                        throw new Exception('Failed to move uploaded file.');
-                    }
-                } catch (Exception $e) {
-                    $message = 'Error: ' . $e->getMessage();
-                }
-            } elseif (isset($_FILES['document'])) {
-                // Handle file upload errors
-                $errorMessages = [
-                    UPLOAD_ERR_INI_SIZE => 'The uploaded file exceeds the upload_max_filesize directive in php.ini.',
-                    UPLOAD_ERR_FORM_SIZE => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.',
-                    UPLOAD_ERR_PARTIAL => 'The uploaded file was only partially uploaded.',
-                    UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
-                    UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder.',
-                    UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-                    UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload.'
-                ];
-                
-                $errorCode = $_FILES['document']['error'];
-                $message = isset($errorMessages[$errorCode]) ? $errorMessages[$errorCode] : 'Unknown upload error.';
+        if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
+            // Keep the original filename
+            $originalFileName = $uploadFile['name'];
+            $targetFileName = $originalFileName;
+            
+            // Create category-specific directory structure
+            $targetPath = getenv('DOCKER_ENV') === 'true' ? '/var/www/html/uploads/' : __DIR__ . '/../uploads/';
+            $userPath = $targetPath . $userId . '/';
+            $categoryPath = $userPath . $category . '/';
+            
+            if (!file_exists($targetPath)) {
+                mkdir($targetPath, 0777, true);
             }
+            
+            if (!file_exists($userPath)) {
+                mkdir($userPath, 0777, true);
+            }
+            
+            if (!file_exists($categoryPath)) {
+                mkdir($categoryPath, 0777, true);
+            }
+            
+            $targetFilePath = $categoryPath . $targetFileName;
+            
+            // Check if file already exists and append counter if needed
+            if (file_exists($targetFilePath)) {
+                $fileInfo = pathinfo($originalFileName);
+                $fileName = $fileInfo['filename'];
+                $fileExt = isset($fileInfo['extension']) ? '.' . $fileInfo['extension'] : '';
+                $counter = 1;
+                
+                while (file_exists($categoryPath . $fileName . '_' . $counter . $fileExt)) {
+                    $counter++;
+                }
+                
+                $targetFileName = $fileName . '_' . $counter . $fileExt;
+                $targetFilePath = $categoryPath . $targetFileName;
+            }
+            
+            if (move_uploaded_file($uploadFile['tmp_name'], $targetFilePath)) {
+                // Initialize database connection
+                $config = require __DIR__ . '/../config.php';
+                $db = new Database($config['database']);
+                Document::setDatabase($db);
+                
+                // Create and save the document
+                $document = new Document(
+                    0,                       // id
+                    $title,                  // title
+                    $description,            // description
+                    date('Y-m-d H:i:s'),     // upload_date
+                    $createdDate,            // created_date
+                    $category,               // category
+                    $targetFilePath,         // file_path
+                    $targetFileName,         // filename
+                    $uploadFile['size'],     // file_size
+                    $uploadFile['type'],     // file_type
+                    $userId                  // user_id
+                );
+                
+                try {
+                    $document->save();
+                    
+                    // Prepare document details for the success page
+                    $documentDetails = [
+                        'id' => $document->id,
+                        'title' => $title,
+                        'description' => $description,
+                        'upload_date' => date('Y-m-d H:i:s'),
+                        'created_date' => $createdDate,
+                        'category' => $category,
+                        'file_path' => $targetFilePath,
+                        'original_filename' => $originalFileName,  // This is the original filename from the upload
+                        'filename' => $targetFileName,  // This might be modified if there was a duplicate
+                        'file_size' => $this->formatFileSize($uploadFile['size']),
+                        'file_type' => $uploadFile['type'],
+                        'user_id' => $userId
+                    ];
+                    
+                    // Show success page with document details
+                    require 'views/upload_success.view.php';
+                    return;
+                } catch (Exception $e) {
+                    // If document save fails, display error
+                    $message = "Error saving document to database: " . $e->getMessage();
+                    error_log($message);
+                }
+            } else {
+                $message = "Error uploading file: " . $this->getFileUploadErrorMessage($uploadFile['error']);
+            }
+        } else if ($uploadFile && $uploadFile['error'] !== UPLOAD_ERR_OK) {
+            $message = "File upload error: " . $this->getFileUploadErrorMessage($uploadFile['error']);
         }
         
-        include 'views/upload.view.php';
-    }
-    
-    // Helper function to get a descriptive error message for file upload errors
-    private function getFileUploadErrorMessage($errorCode) {
-        switch ($errorCode) {
-            case UPLOAD_ERR_INI_SIZE:
-                return "The uploaded file exceeds the upload_max_filesize directive in php.ini.";
-            case UPLOAD_ERR_FORM_SIZE:
-                return "The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.";
-            case UPLOAD_ERR_PARTIAL:
-                return "The uploaded file was only partially uploaded.";
-            case UPLOAD_ERR_NO_FILE:
-                return "No file was uploaded.";
-            case UPLOAD_ERR_NO_TMP_DIR:
-                return "Missing a temporary folder.";
-            case UPLOAD_ERR_CANT_WRITE:
-                return "Failed to write file to disk.";
-            case UPLOAD_ERR_EXTENSION:
-                return "A PHP extension stopped the file upload.";
-            default:
-                return "Unknown upload error.";
-        }
-    }
-    
-    // Helper method to format file sizes in a human-readable format
-    public function formatFileSize($bytes) {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        
-        $bytes /= pow(1024, $pow);
-        
-        return round($bytes, 2) . ' ' . $units[$pow];
+        // If we get here, something went wrong
+        require 'views/upload.view.php';
     }
 
     public function viewDocument() {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
-        $user = isset($_GET['user']) ? $_GET['user'] : 'sergey';
+        $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
+        
         $document = null;
-        
-        // Try to find document in database first
-        try {
-            $document = Document::getById($id);
-            
-            // If found in database, set the can_download flag
-            if ($document) {
-                $documentArray = [
-                    'id' => $document->id,
-                    'title' => $document->title,
-                    'description' => $document->description,
-                    'date' => $document->date,
-                    'category' => $document->category,
-                    'file_path' => $document->filepath,
-                    'filename' => $document->filename,
-                    'file_size' => $document->file_size,
-                    'user' => $document->user,
-                    'can_download' => file_exists($document->filepath)
-                ];
-                $document = $documentArray;
-                include 'views/document.view.php';
-                return;
-            }
-        } catch (Exception $e) {
-            // If database error, continue with file-based lookup
+        if (!empty($id)) {
+            $document = Document::getById($id, $userId);
         }
         
-        // If not found in database, try file-based lookup for backward compatibility
-        if (!$document && $id && strlen($id) === 32 && ctype_xdigit($id)) {
-            // This is likely a real file, search for it
-            $uploadDir = 'uploads/' . $user . '/';
-            
-            if (file_exists($uploadDir)) {
-                // Search in all category directories
-                $categoryDirs = glob($uploadDir . '*', GLOB_ONLYDIR);
-                
-                foreach ($categoryDirs as $categoryDir) {
-                    $categoryName = basename($categoryDir);
-                    $files = glob($categoryDir . '/*.{pdf,doc,docx,txt}', GLOB_BRACE);
-                    
-                    foreach ($files as $file) {
-                        $fileId = md5($file);
-                        
-                        if ($fileId === $id) {
-                            // Found the file
-                            $fileName = basename($file);
-                            $filePath = $file;
-                            $fileSize = filesize($file);
-                            $fileModified = filemtime($file);
-                            
-                            // Extract title from filename
-                            $parts = explode('_', $fileName, 2);
-                            if (count($parts) > 1 && is_numeric($parts[0])) {
-                                $title = pathinfo($parts[1], PATHINFO_FILENAME);
-                                $uploadDate = date('Y-m-d', $parts[0]);
-                            } else {
-                                $title = pathinfo($fileName, PATHINFO_FILENAME);
-                                $uploadDate = date('Y-m-d', $fileModified);
-                            }
-                            
-                            $document = [
-                                'id' => $id,
-                                'title' => $title,
-                                'filename' => $fileName,
-                                'file_path' => $filePath,
-                                'file_size' => $fileSize,
-                                'date' => $uploadDate,
-                                'category' => $categoryName,
-                                'user' => $user,
-                                'description' => 'View or download this document.',
-                                'can_download' => true
-                            ];
-                            
-                            // Also save this to database for future lookups
-                            try {
-                                $newDoc = new Document(
-                                    null,
-                                    $title,
-                                    'View or download this document.',
-                                    $uploadDate,
-                                    $categoryName,
-                                    $filePath,
-                                    $fileName,
-                                    $fileSize,
-                                    $user
-                                );
-                                $newDoc->save();
-                            } catch (Exception $e) {
-                                // Ignore database errors
-                            }
-                            
-                            break 2; // Exit both loops
-                        }
-                    }
-                }
-            }
+        if (!$document) {
+            // Document not found or access denied
+            header('Location: index.php?route=list');
+            exit;
         }
         
-        // If no real document found and the ID is numeric, use simulated data
-        if (!$document && $id && is_numeric($id)) {
-            // Simulated document details using mock data
-            $documents = [
-                // Sergey's documents
-                '1' => ['id' => 1, 'title' => 'Document A.pdf', 'date' => '2025-02-20', 'category' => 'Personal', 'description' => 'Description for Document A.', 'user' => 'sergey'],
-                '2' => ['id' => 2, 'title' => 'Document B.doc', 'date' => '2025-02-21', 'category' => 'Work', 'description' => 'Description for Document B.', 'user' => 'sergey'],
-                '3' => ['id' => 3, 'title' => 'Document C.txt', 'date' => '2025-02-22', 'category' => 'Others', 'description' => 'Description for Document C.', 'user' => 'sergey'],
-                
-                // Galina's documents
-                '4' => ['id' => 4, 'title' => 'Recipe Collection.pdf', 'date' => '2025-02-18', 'category' => 'Personal', 'description' => 'A collection of favorite family recipes.', 'user' => 'galina'],
-                '5' => ['id' => 5, 'title' => 'Project Notes.doc', 'date' => '2025-02-19', 'category' => 'Work', 'description' => 'Notes from the latest project meeting.', 'user' => 'galina'],
-                '6' => ['id' => 6, 'title' => 'Shopping List.txt', 'date' => '2025-02-23', 'category' => 'Others', 'description' => 'Weekly shopping list with items and prices.', 'user' => 'galina']
-            ];
-            
-            if (isset($documents[$id])) {
-                $document = $documents[$id];
-            }
-        }
-        
-        include 'views/document.view.php';
+        include 'views/view.view.php';
     }
 
     /**
@@ -399,11 +312,11 @@ class DocumentController {
      */
     public function downloadDocument() {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
-        $user = isset($_GET['user']) ? $_GET['user'] : 'sergey';
+        $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
         
         if ($id && strlen($id) === 32 && ctype_xdigit($id)) {
             // This is likely a real file, search for it
-            $uploadDir = 'uploads/' . $user . '/';
+            $uploadDir = 'uploads/' . $userId . '/';
             
             if (file_exists($uploadDir)) {
                 // Search in all category directories
@@ -450,4 +363,51 @@ class DocumentController {
         header('HTTP/1.0 404 Not Found');
         include 'views/404.view.php';
     }
+    
+    /**
+     * Format a file size in bytes to a human-readable format
+     * 
+     * @param int $bytes File size in bytes
+     * @param int $precision Number of decimal places to round to
+     * @return string Formatted file size
+     */
+    public function formatFileSize($bytes, $precision = 2) {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        
+        $bytes /= pow(1024, $pow);
+        
+        return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Get a human-readable error message for file upload errors
+     * 
+     * @param int $errorCode PHP file upload error code
+     * @return string Human-readable error message
+     */
+    private function getFileUploadErrorMessage($errorCode) {
+        switch ($errorCode) {
+            case UPLOAD_ERR_INI_SIZE:
+                return "The uploaded file exceeds the upload_max_filesize directive in php.ini.";
+            case UPLOAD_ERR_FORM_SIZE:
+                return "The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.";
+            case UPLOAD_ERR_PARTIAL:
+                return "The uploaded file was only partially uploaded.";
+            case UPLOAD_ERR_NO_FILE:
+                return "No file was uploaded.";
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return "Missing a temporary folder.";
+            case UPLOAD_ERR_CANT_WRITE:
+                return "Failed to write file to disk.";
+            case UPLOAD_ERR_EXTENSION:
+                return "A PHP extension stopped the file upload.";
+            default:
+                return "Unknown upload error.";
+        }
+    }
+
 }
