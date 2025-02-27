@@ -1,7 +1,10 @@
 <?php
 
 include('error_log.php');
-// include('debug.php'); // Comment out debug helpers for now
+// include('debug.php'); 
+
+// Start session for flash messages
+session_start();
 
 // Add cache control headers to prevent browser caching
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
@@ -60,6 +63,11 @@ switch($route){
         require_once 'controllers/DocumentController.php';
         $controller = new DocumentController($db);
         $controller->downloadDocument();
+        break;
+    case 'delete':
+        require_once 'controllers/DocumentController.php';
+        $controller = new DocumentController($db);
+        $controller->deleteDocument();
         break;
     default:
         include 'views/404.view.php';

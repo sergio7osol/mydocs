@@ -4,13 +4,10 @@ class DocumentController {
 
     public function listDocuments()
     {
-        // Get user ID, either from GET parameter or use default (Sergey, ID 1)
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
         
-        // Get category from either GET 
         $category = isset($_GET['category']) ? $_GET['category'] : '';
         
-        // Add debug info to help troubleshoot
         error_log("Loading documents for user ID: " . $userId . ", category: " . $category);
         
         $documents = [];
@@ -48,6 +45,26 @@ class DocumentController {
                 $doc['title'] = $doc['filename'] ?? 'Untitled Document';
             }
         }
+        
+        // Remove duplicates by keeping track of seen IDs
+        $uniqueDocuments = [];
+        $seenIds = [];
+        $seenTitles = []; // Track title+user+date combinations to catch duplicates with different IDs
+        
+        foreach ($documents as $doc) {
+            $titleUserKey = $doc['title'] . '|' . $userId . '|' . $doc['upload_date'];
+            
+            // Check both ID and title+user+date combinations
+            if (!isset($seenIds[$doc['id']]) && !isset($seenTitles[$titleUserKey])) {
+                $uniqueDocuments[] = $doc;
+                $seenIds[$doc['id']] = true;
+                $seenTitles[$titleUserKey] = true;
+            } else {
+                error_log("Removed duplicate document with ID: " . $doc['id'] . ", Title: " . $doc['title']);
+            }
+        }
+        
+        $documents = $uniqueDocuments;
         
         include 'views/index.view.php';
     }
@@ -362,6 +379,50 @@ class DocumentController {
         // If file not found or other error
         header('HTTP/1.0 404 Not Found');
         include 'views/404.view.php';
+    }
+    
+    /**
+     * Delete a document
+     */
+    public function deleteDocument() {
+        // Check if the user is logged in
+        $userId = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+        $documentId = isset($_GET['id']) ? $_GET['id'] : null;
+        
+        if (!$userId || !$documentId) {
+            $_SESSION['error'] = 'Missing required parameters';
+            header('Location: index.php?user_id=' . $userId);
+            exit;
+        }
+        
+        try {
+            // First verify the document belongs to the user
+            $document = Document::getById($documentId, $userId);
+            
+            if (!$document) {
+                $_SESSION['error'] = 'Document not found or access denied';
+                header('Location: index.php?user_id=' . $userId);
+                exit;
+            }
+            
+            // Delete the document
+            $success = Document::deleteById($documentId);
+            
+            if ($success) {
+                error_log("Document $documentId deleted successfully by user $userId");
+                $_SESSION['success'] = 'Document deleted successfully';
+            } else {
+                $_SESSION['error'] = 'Failed to delete document';
+            }
+        } catch (Exception $e) {
+            error_log("Error deleting document: " . $e->getMessage());
+            $_SESSION['error'] = 'Error: ' . $e->getMessage();
+        }
+        
+        // Return to the document list, preserving any category filter
+        $category = isset($_GET['category']) ? '&category=' . urlencode($_GET['category']) : '';
+        header('Location: index.php?user_id=' . $userId . $category);
+        exit;
     }
     
     /**
