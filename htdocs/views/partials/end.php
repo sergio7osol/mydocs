@@ -1,4 +1,5 @@
-</main>
+  </main>
+</div>
 
 <script src="/main.js"></script>
 
