@@ -314,48 +314,41 @@ class DocumentController {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
         
-        if ($id && strlen($id) === 32 && ctype_xdigit($id)) {
-            // This is likely a real file, search for it
-            $uploadDir = 'uploads/' . $userId . '/';
-            
-            if (file_exists($uploadDir)) {
-                // Search in all category directories
-                $categoryDirs = glob($uploadDir . '*', GLOB_ONLYDIR);
+        if ($id) {
+            try {
+                // Get document from database
+                $document = Document::getById($id, $userId);
                 
-                foreach ($categoryDirs as $categoryDir) {
-                    $files = glob($categoryDir . '/*.{pdf,doc,docx,txt}', GLOB_BRACE);
+                if ($document) {
+                    // Convert Docker path to local path
+                    $dockerPath = $document->file_path;
+                    $localPath = str_replace('/var/www/html/', '', $dockerPath);
                     
-                    foreach ($files as $file) {
-                        $fileId = md5($file);
+                    // Check if file exists and is readable
+                    if (file_exists($localPath) && is_readable($localPath)) {
+                        // Get file info
+                        $fileSize = filesize($localPath);
+                        $fileType = $document->file_type;
                         
-                        if ($fileId === $id) {
-                            // Found the file
-                            $fileName = basename($file);
-                            $filePath = $file;
-                            
-                            // Check if file exists and is readable
-                            if (file_exists($filePath) && is_readable($filePath)) {
-                                // Get file info
-                                $fileSize = filesize($filePath);
-                                $fileType = mime_content_type($filePath);
-                                
-                                // Set headers for download
-                                header('Content-Description: File Transfer');
-                                header('Content-Type: ' . $fileType);
-                                header('Content-Disposition: attachment; filename="' . $fileName . '"');
-                                header('Content-Transfer-Encoding: binary');
-                                header('Expires: 0');
-                                header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-                                header('Pragma: public');
-                                header('Content-Length: ' . $fileSize);
-                                
-                                // Output file and exit
-                                readfile($filePath);
-                                exit;
-                            }
-                        }
+                        // Set headers for download
+                        header('Content-Description: File Transfer');
+                        header('Content-Type: ' . $fileType);
+                        header('Content-Disposition: attachment; filename="' . $document->filename . '"');
+                        header('Content-Transfer-Encoding: binary');
+                        header('Expires: 0');
+                        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+                        header('Pragma: public');
+                        header('Content-Length: ' . $fileSize);
+                        
+                        // Output file and exit
+                        readfile($localPath);
+                        exit;
+                    } else {
+                        error_log("File not found or not readable: " . $localPath);
                     }
                 }
+            } catch (Exception $e) {
+                error_log("Error downloading document: " . $e->getMessage());
             }
         }
         
