@@ -8,7 +8,7 @@ include 'partials/start.php';
   <h2>Categories</h2>
   <ul>
     <?php
-    $categories = ['Personal', 'Work', 'Others'];
+    $categories = ['Personal', 'Work', 'Others', 'State Office'];
     $currentCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
     foreach ($categories as $category):

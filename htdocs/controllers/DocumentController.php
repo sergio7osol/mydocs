@@ -172,6 +172,7 @@ class DocumentController {
 
     public function showUploadForm() {
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
+        $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : ''; // Get category from URL if available
         require 'views/upload.view.php';
     }
 
@@ -471,7 +472,7 @@ class DocumentController {
         $this->checkPermissions($userId);
         
         $importCount = 0;
-        $categories = ['Personal', 'Work', 'Others']; // Standard categories with proper casing
+        $categories = ['Personal', 'Work', 'Others', 'State Office']; // Updated categories list to match database ENUM
         $categoryMap = [];
         
         // Create mapping of lowercase category names to standard capitalization
@@ -549,7 +550,7 @@ class DocumentController {
             error_log("Found " . count($documents) . " documents to check for category repair");
             
             $repairedCount = 0;
-            $standardCategories = ['Personal', 'Work', 'Others'];
+            $standardCategories = ['Personal', 'Work', 'Others', 'State Office'];
             $categoryMap = [];
             
             // Create mapping of lowercase category names to standard capitalization

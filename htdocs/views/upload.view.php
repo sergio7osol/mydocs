@@ -3,6 +3,7 @@
 $pageTitle = 'Upload Document';
 include 'partials/start.php';
 $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
+$preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
 ?>
 
@@ -49,9 +50,10 @@ $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
           <select name="category" id="category" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=\"%23333\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; transition: border-color 0.2s, box-shadow 0.2s;"
                  onFocus="this.style.borderColor='#4a6da7'; this.style.boxShadow='0 0 0 3px rgba(74, 109, 167, 0.1)';" 
                  onBlur="this.style.borderColor='#ddd'; this.style.boxShadow='none';">
-            <option value="Personal">Personal</option>
-            <option value="Work">Work</option>
-            <option value="Others">Others</option>
+            <option value="Personal" <?= (isset($preselectedCategory) && $preselectedCategory === 'Personal') ? 'selected' : '' ?>>Personal</option>
+            <option value="Work" <?= (isset($preselectedCategory) && $preselectedCategory === 'Work') ? 'selected' : '' ?>>Work</option>
+            <option value="Others" <?= (isset($preselectedCategory) && $preselectedCategory === 'Others') ? 'selected' : '' ?>>Others</option>
+            <option value="State Office" <?= (isset($preselectedCategory) && $preselectedCategory === 'State Office') ? 'selected' : '' ?>>State Office</option>
           </select>
         </div>
         

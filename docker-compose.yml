@@ -22,6 +22,7 @@ services:
     restart: always
     volumes:
       - ./htdocs:/var/www/html
+      - ./php-upload-limits.ini:/usr/local/etc/php/conf.d/php-upload-limits.ini:ro
     healthcheck:
       test: ["CMD", "php", "-r", "echo 'OK';"]
       interval: 5s
