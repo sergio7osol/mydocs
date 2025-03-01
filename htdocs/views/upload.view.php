@@ -39,7 +39,7 @@ $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
               <span style="background: #eee; padding: 3px 6px; border-radius: 3px; margin-right: 5px;">DOC</span>
               <span style="background: #eee; padding: 3px 6px; border-radius: 3px; margin-right: 5px;">DOCX</span>
               <span style="background: #eee; padding: 3px 6px; border-radius: 3px;">TXT</span>
-              <span style="margin-left: 10px;">Max: 5MB</span>
+              <span style="margin-left: 10px;">Max: 15MB</span>
             </div>
           </div>
         </div>

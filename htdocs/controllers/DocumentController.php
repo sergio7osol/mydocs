@@ -1,6 +1,7 @@
 <?php
 
 class DocumentController {
+    const MAX_FILE_SIZE = 15728640; // 15 MB
 
     public function listDocuments()
     {
@@ -192,6 +193,12 @@ class DocumentController {
         $message = '';
         
         if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
+            if ($uploadFile['size'] > self::MAX_FILE_SIZE) {
+                $message = "Error: The uploaded file exceeds the maximum allowed size of " . $this->formatFileSize(self::MAX_FILE_SIZE) . ".";
+                require 'views/upload.view.php';
+                return;
+            }
+            
             // Keep the original filename
             $originalFileName = $uploadFile['name'];
             $targetFileName = $originalFileName;
