@@ -10,9 +10,9 @@ $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
   <?php if (isset($document) && $document): ?>
     <div class="document-details">
       <h2><?= htmlspecialchars($document['title']); ?></h2>
-      <p><strong>Upload Date:</strong> <?= htmlspecialchars($document['date'] ?? $document['upload_date']); ?></p>
+      <p><strong>ed at:</strong> <?= htmlspecialchars($document['date'] ?? $document['upload_date']); ?></p>
       <?php if (!empty($document['created_date'])): ?>
-      <p><strong>Document Creation Date:</strong> <?= htmlspecialchars($document['created_date']); ?></p>
+      <p><strong>Created at:</strong> <?= htmlspecialchars($document['created_date']); ?></p>
       <?php endif; ?>
       <p><strong>Category:</strong> <?= htmlspecialchars($document['category']); ?></p>
       <?php if (isset($document['file_size'])): ?>

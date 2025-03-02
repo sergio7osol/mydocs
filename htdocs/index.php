@@ -3,8 +3,7 @@
 include('error_log.php');
 // include('debug.php'); 
 
-// Start session for flash messages
-session_start();
+session_start(); // Start session for flash messages
 
 // Add cache control headers to prevent browser caching
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");

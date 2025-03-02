@@ -9,12 +9,8 @@ class DocumentController {
         
         $this->checkPermissions($userId);
 
-        // Clear any document caches
         self::clearDocumentCache();
         
-        // Import any new documents from filesystem into database
-        $this->importFilesystemDocuments($userId);
-
         // Get documents from database - database is the single source of truth
         try {
             // Get documents directly from the database
@@ -459,7 +455,12 @@ class DocumentController {
     }
     
     /**
-     * Import documents from filesystem into database
+     * Import documents from filesystem into database - ADMIN USE ONLY
+     * 
+     * This is a special administrative function for data recovery, migration, or repair.
+     * It should NOT be used in normal application flow as the database is the only source of truth.
+     * This method is intentionally kept for administrative purposes only and should never be
+     * called from regular user-facing functionality.
      * 
      * @param int $userId The user ID to import documents for
      * @return int The number of documents imported

@@ -58,7 +58,7 @@ $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
         </div>
         
         <div class="form-group" style="margin-bottom: 20px;">
-          <label for="created_date" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Document Creation Date (optional):</label>
+          <label for="created_date" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Created at (optional):</label>
           <input type="date" name="created_date" id="created_date" style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s;" 
                  onFocus="this.style.borderColor='#4a6da7'; this.style.boxShadow='0 0 0 3px rgba(74, 109, 167, 0.1)';" 
                  onBlur="this.style.borderColor='#ddd'; this.style.boxShadow='none';">

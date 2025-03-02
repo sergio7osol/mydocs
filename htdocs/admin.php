@@ -28,6 +28,9 @@ if (isset($_GET['action'])) {
         $message = "Database repair completed. Fixed {$repaired} document categories.";
     }
     else if ($_GET['action'] === 'import_documents') {
+        // Special admin-only function for manual import from filesystem
+        // This is intentionally kept as an administrative tool for data recovery/migration
+        // but should not be part of normal application flow as database is the only source of truth
         $imported = $documentController->importFilesystemDocuments($userId);
         $message = "Document import completed. Imported {$imported} new documents.";
     }

@@ -114,7 +114,7 @@ include 'partials/start.php';
                 <p class="document-description"><?= htmlspecialchars($doc['description']) ?></p>
               <?php endif; ?>
             </div>
-            <span class="document-date"><span class="light-text">Uploaded on:</span> <?= htmlspecialchars($doc['upload_date']) ?></span>
+            <span class="document-date"><span class="light-text">Created on:</span> <?= htmlspecialchars(!empty($doc['created_date']) ? $doc['created_date'] : $doc['upload_date']) ?></span>
             <span class="document-category"><?= htmlspecialchars($doc['category']) ?></span>
           </div>
         </div>

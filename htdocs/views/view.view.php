@@ -18,21 +18,59 @@ try {
   <?php if (isset($document) && $document): ?>
     <div class="document-details">
       <h2><?= htmlspecialchars($document->title); ?></h2>
-      <?php if (!empty($document->created_date)): ?>
-      <p><strong>Document Creation Date:</strong> <?= htmlspecialchars($document->created_date); ?></p>
-      <?php endif; ?>
-      <p><strong>Upload Date:</strong> <?= htmlspecialchars($document->upload_date); ?></p>
-      <p><strong>Category:</strong> <?= htmlspecialchars($document->category); ?></p>
-      <p><strong>Owner:</strong> 
-        <?php 
-        try {
-          $owner = User::getById($document->user_id);
-          echo htmlspecialchars($owner ? ($owner->firstname . ' ' . $owner->lastname) : 'Unknown');
-        } catch (Exception $e) {
-          echo 'Unknown';
-        }
-        ?>
-      </p>
+      
+      <table style="border-collapse: separate; border-spacing: 0 18px; margin-bottom: 15px; width: auto;">
+        <?php if (!empty($document->created_date)): ?>
+        <tr style="margin-bottom: 12px;">
+          <td style="padding-right: 15px; color: #555; vertical-align: middle;">Created at:</td>
+          <td>
+            <span style="display: inline-block; background-color: transparent; border-bottom: 2px solid #2196f3; color: #0d47a1; font-weight: 600; padding: 4px 2px;"><?= htmlspecialchars($document->getFormattedCreatedDate()); ?></span>
+          </td>
+        </tr>
+        <?php endif; ?> 
+        <tr style="margin-bottom: 12px;">
+          <td style="padding-right: 15px; color: #555;">Uploaded at:</td>
+          <td>
+            <?php 
+            $formattedUploadDate = htmlspecialchars($document->getFormattedUploadDate());
+            // Split the date and time parts based on the dash separator
+            $dateParts = explode(' - ', $formattedUploadDate);
+            if (count($dateParts) > 1) {
+              echo $dateParts[0] . ' <span style="font-size: 85%; color: #777;">- ' . $dateParts[1] . '</span>';
+            } else {
+              echo $formattedUploadDate;
+            }
+            ?>
+          </td>
+        </tr>
+        <?php if (!empty($document->description)): ?>
+        <tr style="margin-bottom: 12px;">
+          <td style="padding-right: 15px; color: #555; vertical-align: top; padding-top: 8px;">Description:</td>
+          <td>
+            <div style="border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; line-height: 1.4; max-width: 500px; display: inline-block;">
+              <?= nl2br(htmlspecialchars($document->description)); ?>
+            </div>
+          </td>
+        </tr>
+        <?php endif; ?>
+        <tr style="margin-bottom: 12px;">
+          <td style="padding-right: 15px; color: #555;">Category:</td>
+          <td><span style="display: inline-block; background-color: #e3f2fd; color: #0d47a1; border-radius: 16px; padding: 3px 10px; font-size: 90%;"><?= htmlspecialchars($document->category); ?></span></td>
+        </tr>
+        <tr>
+          <td style="padding-right: 15px; color: #555;">Owner:</td>
+          <td>
+            <?php 
+            try {
+              $owner = User::getById($document->user_id);
+              echo htmlspecialchars($owner ? ($owner->firstname . ' ' . $owner->lastname) : 'Unknown');
+            } catch (Exception $e) {
+              echo 'Unknown';
+            }
+            ?>
+          </td>
+        </tr>
+      </table>
       
       <?php 
       // Convert Docker path to local path for display
@@ -58,7 +96,7 @@ try {
           <h3>Document Content:</h3>
           <pre style="white-space: pre-wrap;"><?= htmlspecialchars(file_get_contents($localPath)); ?></pre>
         <?php else: ?>
-          <p><strong>File Path:</strong> <?= htmlspecialchars($localPath); ?></p>
+          <p><strong>File Path:</strong> <code style="background-color: #f5f5f5; padding: 3px 6px; border: 1px solid #e1e1e1; border-radius: 3px; font-family: monospace; word-break: break-all;"><?= htmlspecialchars($localPath); ?></code></p>
         <?php endif; ?>
       </div>
       
@@ -77,7 +115,3 @@ try {
 </div>
 
 <?php include 'partials/end.php'; ?>
-
-<script>
-  <?php /* All "Open in Explorer" related JavaScript code removed */ ?>
-</script>

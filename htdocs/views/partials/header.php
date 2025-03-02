@@ -5,10 +5,6 @@
 
     $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 
-    // Import any filesystem documents into database to maintain database as source of truth
-    $controller = new DocumentController();
-    $controller->importFilesystemDocuments();
-
     try {
         $users = User::getAll();
 

@@ -238,4 +238,22 @@ class Document {
         
         return $result['count'] > 0;
     }
+
+    // New method: Get formatted created date (DD.MM.YYYY)
+    public function getFormattedCreatedDate() {
+        if (empty($this->created_date)) {
+            return '';
+        }
+        $date = new DateTime($this->created_date);
+        return $date->format('d.m.Y');
+    }
+    
+    // New method: Get formatted upload date with time (DD.MM.YYYY HH:MM:SS)
+    public function getFormattedUploadDate() {
+        if (empty($this->upload_date)) {
+            return '';
+        }
+        $dateTime = new DateTime($this->upload_date);
+        return $dateTime->format('d.m.Y - H:i:s');
+    }
 }
