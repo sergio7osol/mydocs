@@ -73,7 +73,7 @@ include 'partials/start.php';
       <?php endif; ?>
       <input type="text" name="search" placeholder="Search documents" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
       <button type="submit" class="search-button">Search</button>
-      <a href="index.php?route=upload&user_id=<?= $currentUserId ?>" class="upload-button">Upload Document</a>
+      <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="upload-button">Upload Document</a>
     </form>
   </div>
 
@@ -122,7 +122,7 @@ include 'partials/start.php';
       
       <?php if (isset($_GET['category'])): ?>
         <div class="category-upload-button-container">
-          <a href="index.php?route=upload<?= isset($_GET['user_id']) ? '&user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
+          <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?><?= isset($_GET['category']) ? '&category=' . htmlspecialchars($_GET['category']) : '' ?>" class="btn btn-primary">Upload to this category</a>
         </div>
       <?php endif; ?>
       
@@ -131,14 +131,14 @@ include 'partials/start.php';
         <i class="fa fa-folder-open"></i>
         <p>No documents found in category "<?= htmlspecialchars($_GET['category']) ?>".</p>
         <p class="sub-message">Upload a document to this category to see it here.</p>
-        <a href="index.php?route=upload<?= isset($_GET['user_id']) ? '&user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
+        <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
       </div>
     <?php else: ?>
       <div class="empty-state">
         <i class="fa fa-file-o"></i>
         <p>No documents found.</p>
         <p class="sub-message">Start by uploading a document using the form below.</p>
-        <a href="index.php?route=upload<?= isset($_GET['user_id']) ? '&user_id=' . $_GET['user_id'] : '' ?>" class="btn btn-primary">Upload a document</a>
+        <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?>" class="btn btn-primary">Upload a document</a>
       </div>
     <?php endif; ?>
   </div>

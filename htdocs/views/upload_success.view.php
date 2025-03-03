@@ -66,7 +66,7 @@ try {
   
   <div style="text-align: center; margin-top: 2em;">
     <a href="index.php?route=list&category=<?= htmlspecialchars($documentDetails['category']) ?>&user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-primary">View Documents</a>
-    <a href="index.php?route=upload&user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-success">Upload Another Document</a>
+    <a href="/doc/upload?user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-success">Upload Another Document</a>
   </div>
 </div>
 

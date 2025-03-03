@@ -35,7 +35,21 @@ file_put_contents(__DIR__ . '/access.log',
     FILE_APPEND
 );
 
-$route = isset($_GET['route']) ? $_GET['route'] : 'list';
+// Check if we're using a clean URL
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+// Handle clean URLs for upload
+if ($requestUri == '/doc/upload') {
+        // Check if it's a POST request (form submission) or GET request (show form)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $route = 'upload_post';
+        } else {
+            $route = 'upload';
+        }
+} else {
+    // Original route determination for backward compatibility
+    $route = isset($_GET['route']) ? $_GET['route'] : 'list';
+}
 
 switch($route){
     case 'list': 

@@ -1,7 +1,9 @@
 <?php
 
 $pageTitle = 'Upload Document';
+
 include 'partials/start.php';
+
 $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
@@ -23,7 +25,7 @@ $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
     </div>
     
     <div class="card-body" style="padding: 25px;">
-      <form action="index.php?route=upload_post&user_id=<?= $currentUserId ?>" method="POST" enctype="multipart/form-data">
+      <form action="/doc/upload?user_id=<?= $currentUserId ?>" method="POST" enctype="multipart/form-data">
         <div class="form-group" style="margin-bottom: 20px;">
           <label for="title" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Document Title:</label>
           <input type="text" name="title" id="title" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s;" 
