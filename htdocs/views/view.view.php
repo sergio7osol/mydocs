@@ -81,14 +81,15 @@ try {
       error_log("Original file path: " . $dockerPath);
       error_log("Simplified path: " . $localPath);
       
-      // Get the absolute path on disk - let PHP handle path resolution
-      $absolutePath = realpath(__DIR__ . '/../../' . $localPath);
+      // Get actual Windows-style absolute path for the user
+      $windowsBasePath = 'c:\\Users\\Sergey_Osokin\\IT\\Programming\\PHP\\mydocs-docs\\htdocs\\';
+      $windowsFilePath = $windowsBasePath . str_replace('/', '\\', $localPath);
       
-      // Store raw path for directory navigation
-      $rawPath = dirname(__DIR__) . '/../' . $localPath;
+      // Get directory path (without the filename)
+      $windowsDirectoryPath = dirname($windowsFilePath);
       
-      error_log("Calculated absolute path: " . $absolutePath);
-      error_log("Raw path for explorer: " . $rawPath);
+      error_log("Windows absolute path for clipboard: " . $windowsFilePath);
+      error_log("Windows directory path for clipboard: " . $windowsDirectoryPath);
       ?>
       
       <div class="document-content" style="margin-top: 1em; padding: 1em; border: 1px solid #ddd; background-color: #f9f9f9;">
@@ -96,7 +97,157 @@ try {
           <h3>Document Content:</h3>
           <pre style="white-space: pre-wrap;"><?= htmlspecialchars(file_get_contents($localPath)); ?></pre>
         <?php else: ?>
-          <p><strong>File Path:</strong> <code style="background-color: #f5f5f5; padding: 3px 6px; border: 1px solid #e1e1e1; border-radius: 3px; font-family: monospace; word-break: break-all;"><?= htmlspecialchars($localPath); ?></code></p>
+          <p>
+            <strong>File Path:</strong> 
+            <span class="path-container">
+              <code id="filePath" 
+                    class="copyable-path"
+                    data-path="<?= htmlspecialchars($windowsFilePath); ?>"
+                    data-dir-path="<?= htmlspecialchars($windowsDirectoryPath); ?>"
+                    title="Click buttons to copy paths">
+                <?= htmlspecialchars($localPath); ?>
+              </code>
+              <div class="button-group">
+                <button id="copyFileBtn" class="copy-button">
+                  Copy File Path
+                </button>
+                <button id="copyDirBtn" class="copy-button">
+                  Copy Folder Path
+                </button>
+              </div>
+            </span>
+            <span id="copyMessage" style="display: none; color: green; margin-left: 10px; font-size: 0.9em;">Copied to clipboard!</span>
+          </p>
+          
+          <style>
+            .path-container {
+              display: flex;
+              align-items: flex-start;
+              gap: 10px;
+              flex-wrap: wrap;
+            }
+            
+            .button-group {
+              display: flex;
+              flex-direction: column;
+              gap: 5px;
+            }
+            
+            .copyable-path {
+              background-color: #f5f5f5; 
+              padding: 3px 6px; 
+              border: 1px solid #e1e1e1; 
+              border-radius: 3px; 
+              font-family: monospace; 
+              word-break: break-all;
+              transition: all 0.2s ease-in-out;
+              display: inline-block;
+            }
+            
+            .copyable-path:hover {
+              background-color: #e9f5ff;
+              border-color: #7fb5ff;
+            }
+            
+            .copy-button {
+              background-color: #e6e6e6;
+              border: 1px solid #ccc;
+              border-radius: 3px;
+              padding: 4px 8px;
+              cursor: pointer;
+              font-size: 0.85em;
+              transition: all 0.2s ease;
+              white-space: nowrap;
+            }
+            
+            .copy-button:hover {
+              background-color: #d4d4d4;
+            }
+            
+            .copy-button:active {
+              background-color: #c4c4c4;
+              transform: translateY(1px);
+            }
+          </style>
+          
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const copyFileBtn = document.getElementById('copyFileBtn');
+              const copyDirBtn = document.getElementById('copyDirBtn');
+              const pathElement = document.getElementById('filePath');
+              const message = document.getElementById('copyMessage');
+              
+              // Function to copy text to clipboard
+              function copyToClipboard(text, successMessage) {
+                // Log to console for debugging
+                console.log('Attempting to copy:', text);
+                
+                // Use the modern clipboard API
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(text)
+                    .then(() => {
+                      console.log('Successfully copied to clipboard');
+                      showCopyMessage(successMessage);
+                    })
+                    .catch(err => {
+                      console.error('Failed to copy text: ', err);
+                      alert('Could not copy to clipboard. Your browser might be blocking this feature.');
+                    });
+                } else {
+                  // Fallback for older browsers
+                  const textarea = document.createElement('textarea');
+                  textarea.value = text;
+                  textarea.style.position = 'fixed';
+                  textarea.style.opacity = 0;
+                  document.body.appendChild(textarea);
+                  textarea.focus();
+                  textarea.select();
+                  
+                  try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                      console.log('Fallback copy successful');
+                      showCopyMessage(successMessage);
+                    } else {
+                      console.error('Fallback copy failed');
+                      alert('Could not copy to clipboard');
+                    }
+                  } catch (err) {
+                    console.error('Fallback copy error: ', err);
+                    alert('Could not copy to clipboard');
+                  }
+                  
+                  document.body.removeChild(textarea);
+                }
+              }
+              
+              // Add click event for file path button
+              if (copyFileBtn) {
+                copyFileBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  const textToCopy = pathElement.getAttribute('data-path');
+                  copyToClipboard(textToCopy, 'Copied file path to clipboard!');
+                });
+              }
+              
+              // Add click event for directory path button
+              if (copyDirBtn) {
+                copyDirBtn.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  const textToCopy = pathElement.getAttribute('data-dir-path');
+                  copyToClipboard(textToCopy, 'Copied folder path to clipboard!');
+                });
+              }
+              
+              function showCopyMessage(text) {
+                message.textContent = text || 'Copied to clipboard!';
+                message.style.display = 'inline';
+                setTimeout(function() {
+                  message.style.display = 'none';
+                }, 2000);
+              }
+            });
+          </script>
         <?php endif; ?>
       </div>
       
