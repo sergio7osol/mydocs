@@ -119,6 +119,13 @@ include 'partials/start.php';
           </div>
         </div>
       <?php endforeach; ?>
+      
+      <?php if (isset($_GET['category'])): ?>
+        <div class="category-upload-button-container">
+          <a href="index.php?route=upload<?= isset($_GET['user_id']) ? '&user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
+        </div>
+      <?php endif; ?>
+      
     <?php elseif (isset($_GET['category'])): ?>
       <div class="empty-state">
         <i class="fa fa-folder-open"></i>
@@ -137,6 +144,31 @@ include 'partials/start.php';
   </div>
 </main>
 
+<style>
+  /* New styles for the upload button when documents exist */
+  .category-upload-button-container {
+    margin-top: 3rem;
+    padding: 15px;
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .category-upload-button-container .btn-primary {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #4a6da7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s;
+  }
+  
+  .category-upload-button-container .btn-primary:hover {
+    background-color: #3a5a8f;
+  }
+</style>
 
 <script>
   function changeUser(userId) {

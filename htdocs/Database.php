@@ -3,17 +3,17 @@
 class Database  
 {
     public $connection;
+    public $statement;
 
     public function __construct($config, $username = 'myuser', $password = 'myuserpass')
     {
         try {
             $dsn = 'mysql:' . http_build_query($config, '', ';');
             
-            // Enable exception-based error handling
             $options = [
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_EMULATE_PREPARES => false  // Use real prepared statements
+                PDO::ATTR_EMULATE_PREPARES => false  
             ];
 
             // Create PDO connection
@@ -36,9 +36,9 @@ class Database
     public function query($query, $params = [])
     {
         try {
-            $statement = $this->connection->prepare($query);
-            $statement->execute($params);
-            return $statement;
+            $this->statement = $this->connection->prepare($query);
+            $this->statement->execute($params);
+            return $this->statement;
         } catch (PDOException $e) {
             error_log("Query failed: " . $query);
             error_log("Error: " . $e->getMessage());

@@ -303,8 +303,7 @@ class DocumentController {
         }
         
         if (!$document) {
-            // Document not found or access denied
-            header('Location: index.php?route=list');
+            header('Location: index.php?route=list'); // Document not found or access denied
             exit;
         }
         
