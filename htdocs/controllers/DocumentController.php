@@ -176,7 +176,7 @@ class DocumentController {
         $title = isset($_POST['title']) ? $_POST['title'] : '';
         $description = isset($_POST['description']) ? $_POST['description'] : '';
         $category = isset($_POST['category']) ? $_POST['category'] : 'Personal';
-        $userId = isset($_POST['user_id']) ? $_POST['user_id'] : 1; // Default to user ID 1 (Sergey)
+        $userId = isset($_POST['user_id']) ? $_POST['user_id'] : 1; 
         $createdDate = isset($_POST['created_date']) && !empty($_POST['created_date']) ? $_POST['created_date'] : null;
         
         // Get user object for validation

@@ -68,7 +68,6 @@ class Document {
                 ':user_id' => $this->user_id
             ];
         } else {
-            // Insert new record
             $query = "INSERT INTO documents (title, description, upload_date, created_date, category, file_path, filename, file_size, file_type, user_id) 
                       VALUES (:title, :description, :upload_date, :created_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
             $params = [

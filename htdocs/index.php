@@ -11,7 +11,7 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
 if (file_exists('/.dockerenv') || getenv('DOCKER_ENV') === 'true') {
-    putenv('DOCKER_ENV=true');
+	putenv('DOCKER_ENV=true');
 }
 
 require_once 'Database.php';
@@ -27,62 +27,60 @@ Document::setDatabase($db);
 User::setDatabase($db);
 
 // Add a simple log entry for requests
-file_put_contents(__DIR__ . '/access.log', 
-    date('[Y-m-d H:i:s]') . ' ' . 
-    $_SERVER['REQUEST_METHOD'] . ' ' . 
-    $_SERVER['REQUEST_URI'] . ' ' . 
-    'GET: ' . json_encode($_GET) . "\n", 
-    FILE_APPEND
+file_put_contents(
+	__DIR__ . '/access.log',
+	date('[Y-m-d H:i:s]') . ' ' .
+		$_SERVER['REQUEST_METHOD'] . ' ' .
+		$_SERVER['REQUEST_URI'] . ' ' .
+		'GET: ' . json_encode($_GET) . "\n",
+	FILE_APPEND
 );
 
-// Check if we're using a clean URL
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Handle clean URLs for upload
 if ($requestUri == '/doc/upload') {
-        // Check if it's a POST request (form submission) or GET request (show form)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $route = 'upload_post';
-        } else {
-            $route = 'upload';
-        }
+	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		$route = 'upload_post';
+	} else {
+		$route = 'upload';
+	}
 } else {
-    // Original route determination for backward compatibility
-    $route = isset($_GET['route']) ? $_GET['route'] : 'list';
+	// Original route determination for backward compatibility
+	$route = isset($_GET['route']) ? $_GET['route'] : 'list';
 }
 
-switch($route){
-    case 'list': 
-        require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController($db);
-        $controller->listDocuments();
-        break;
-    case 'upload':
-        require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController($db);
-        $controller->showUploadForm();
-        break;
-    case 'upload_post':
-        require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController($db);
-        $controller->uploadDocument();
-        break;
-    case 'view':
-        require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController($db);
-        $controller->viewDocument();
-        break;
-    case 'download':
-        require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController($db);
-        $controller->downloadDocument();
-        break;
-    case 'delete':
-        require_once 'controllers/DocumentController.php';
-        $controller = new DocumentController($db);
-        $controller->deleteDocument();
-        break;
-    default:
-        include 'views/404.view.php';
-        break;
+switch ($route) {
+	case 'list':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->listDocuments();
+		break;
+	case 'upload':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->showUploadForm();
+		break;
+	case 'upload_post':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->uploadDocument();
+		break;
+	case 'view':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->viewDocument();
+		break;
+	case 'download':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->downloadDocument();
+		break;
+	case 'delete':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->deleteDocument();
+		break;
+	default:
+		include 'views/404.view.php';
+		break;
 }

@@ -9,82 +9,74 @@ $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
 ?>
 
-<div class="container" style="padding: 2em; max-width: 800px; margin: 0 auto;">
-  <?php if (isset($message)) { ?>
-    <div class="alert <?= strpos($message, 'Error') !== false ? 'alert-danger' : 'alert-success' ?>">
-      <?= htmlspecialchars($message); ?>
-    </div>
-  <?php } ?>
-  
-  <div class="card" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; background-color: white; padding: 0; margin-bottom: 30px;">
-    <div class="card-header" style="background-color: #4a6da7; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="margin: 0; font-size: 1.5rem;">Upload New Document</h2>
-      <a href="index.php?route=list&user_id=<?= $currentUserId ?>" class="btn" style="background-color: white; color: #4a6da7; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; text-decoration: none;">
-        Back to Document List
-      </a>
-    </div>
+<div class="upload-box">
+  <div class="upload-form__container">
+    <?php if (isset($message)) { ?>
+      <div class="upload-form__alert <?= strpos($message, 'Error') !== false ? 'upload-form__alert--danger' : 'upload-form__alert--success' ?>">
+        <?= htmlspecialchars($message); ?>
+      </div>
+    <?php } ?>
     
-    <div class="card-body" style="padding: 25px;">
-      <form action="/doc/upload?user_id=<?= $currentUserId ?>" method="POST" enctype="multipart/form-data">
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="title" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Document Title:</label>
-          <input type="text" name="title" id="title" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s;" 
-                 onFocus="this.style.borderColor='#4a6da7'; this.style.boxShadow='0 0 0 3px rgba(74, 109, 167, 0.1)';" 
-                 onBlur="this.style.borderColor='#ddd'; this.style.boxShadow='none';">
-        </div>
-        
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="document" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Select document to upload:</label>
-          <div style="border: 1px dashed #ccc; background: #f9f9f9; padding: 15px; border-radius: 4px; text-align: center;">
-            <input type="file" name="document" id="document" required accept=".pdf,.doc,.docx,.txt" style="width: 100%;">
-            <div style="margin-top: 10px; font-size: 13px; color: #666;">
-              <span style="background: #eee; padding: 3px 6px; border-radius: 3px; margin-right: 5px;">PDF</span>
-              <span style="background: #eee; padding: 3px 6px; border-radius: 3px; margin-right: 5px;">DOC</span>
-              <span style="background: #eee; padding: 3px 6px; border-radius: 3px; margin-right: 5px;">DOCX</span>
-              <span style="background: #eee; padding: 3px 6px; border-radius: 3px;">TXT</span>
-              <span style="margin-left: 10px;">Max: 15MB</span>
-            </div>
+    <article class="card">
+      <div class="card__header">
+        <h2 class="card__header-title">Upload New Document</h2>
+        <a class="upload-form__header-button" href="index.php?route=list&user_id=<?= $currentUserId ?>">Back to Document List</a>
+      </div>
+      
+      <div class="card__body">
+        <form class="upload-form" action="/doc/upload?user_id=<?= $currentUserId ?>" method="POST" enctype="multipart/form-data">
+          <div class="upload-form__line">
+            <label for="title" class="upload-form__line-title">Document Title:</label>
+            <input type="text" name="title" id="title" class="upload-form__line-input" required>
+            <small class="upload-form__line-clarification">The title of the document being uploaded.</small>
           </div>
-        </div>
-        
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="category" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Category:</label>
-          <select name="category" id="category" required style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=\"%23333\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M7 10l5 5 5-5z\"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; transition: border-color 0.2s, box-shadow 0.2s;"
-                 onFocus="this.style.borderColor='#4a6da7'; this.style.boxShadow='0 0 0 3px rgba(74, 109, 167, 0.1)';" 
-                 onBlur="this.style.borderColor='#ddd'; this.style.boxShadow='none';">
-            <option value="Personal" <?= (isset($preselectedCategory) && $preselectedCategory === 'Personal') ? 'selected' : '' ?>>Personal</option>
-            <option value="Work" <?= (isset($preselectedCategory) && $preselectedCategory === 'Work') ? 'selected' : '' ?>>Work</option>
-            <option value="Others" <?= (isset($preselectedCategory) && $preselectedCategory === 'Others') ? 'selected' : '' ?>>Others</option>
-            <option value="State Office" <?= (isset($preselectedCategory) && $preselectedCategory === 'State Office') ? 'selected' : '' ?>>State Office</option>
-          </select>
-        </div>
-        
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="created_date" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Created at (optional):</label>
-          <input type="date" name="created_date" id="created_date" style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s;" 
-                 onFocus="this.style.borderColor='#4a6da7'; this.style.boxShadow='0 0 0 3px rgba(74, 109, 167, 0.1)';" 
-                 onBlur="this.style.borderColor='#ddd'; this.style.boxShadow='none';">
-          <small style="color: #666; display: block; margin-top: 8px; font-style: italic;">The date when this document was originally created (not when you're uploading it)</small>
-        </div>
-        
-        <div class="form-group" style="margin-bottom: 25px;">
-          <label for="description" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Description (optional):</label>
-          <textarea name="description" id="description" style="width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; min-height: 120px; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s;" 
-                    onFocus="this.style.borderColor='#4a6da7'; this.style.boxShadow='0 0 0 3px rgba(74, 109, 167, 0.1)';" 
-                    onBlur="this.style.borderColor='#ddd'; this.style.boxShadow='none';"></textarea>
-        </div>
-        
-        <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
-        
-        <div style="text-align: center; margin-top: 30px;">
-          <button type="submit" style="background-color: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 4px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);" 
-                  onmouseover="this.style.backgroundColor='#218838'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 8px rgba(40, 167, 69, 0.3)';" 
-                  onmouseout="this.style.backgroundColor='#28a745'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(40, 167, 69, 0.2)';">
-            Upload Document
-          </button>
-        </div>
-      </form>
-    </div>
+          
+          <div id="PPP" class="upload-form__line upload-form__line--file">
+            <label for="document" class="upload-form__line-title">Select document to upload:</label>
+            <div class="upload-form__line-input">
+              <input type="file" name="document" id="document" required accept=".pdf,.doc,.docx,.txt">
+              <div class="upload-form__line-formats">
+                <span class="upload-form__line-format">PDF</span>
+                <span class="upload-form__line-format">DOC</span>
+                <span class="upload-form__line-format">DOCX</span>
+                <span class="upload-form__line-format">TXT</span>
+                <span class="upload-form__line-size">Max: 15MB</span>
+              </div>
+            </div>
+            <small class="upload-form__line-clarification">Upload a document in PDF, DOC, DOCX, or TXT format (max 15MB).</small>
+          </div>
+          
+          <div class="upload-form__line upload-form__line--select">
+            <label for="category" class="upload-form__line-title">Category:</label>
+            <select name="category" id="category" required class="upload-form__line-input">
+              <option value="Personal" <?= (isset($preselectedCategory) && $preselectedCategory === 'Personal') ? 'selected' : '' ?>>Personal</option>
+              <option value="Work" <?= (isset($preselectedCategory) && $preselectedCategory === 'Work') ? 'selected' : '' ?>>Work</option>
+              <option value="Others" <?= (isset($preselectedCategory) && $preselectedCategory === 'Others') ? 'selected' : '' ?>>Others</option>
+              <option value="State Office" <?= (isset($preselectedCategory) && $preselectedCategory === 'State Office') ? 'selected' : '' ?>>State Office</option>
+            </select>
+          </div>
+          
+          <div class="upload-form__line">
+            <label for="created_date" class="upload-form__line-title">Created at (optional):</label>
+            <input type="date" name="created_date" id="created_date" class="upload-form__line-input">
+            <small class="upload-form__line-clarification">The date when this document was originally created (not when you're uploading it)</small>
+          </div>
+          
+          <div class="upload-form__line upload-form__line--textarea">
+            <label for="description" class="upload-form__line-title">Description (optional):</label>
+            <textarea name="description" id="description" class="upload-form__line-input"></textarea>
+          </div>
+          
+          <div class="upload-form__line upload-form__line--hidden">
+            <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
+          </div>
+          
+          <div class="upload-form__line upload-form__line--button">
+            <button type="submit" class="upload-form__line-button">Upload Document</button>
+          </div>
+        </form>
+      </div>
+    </article>
   </div>
 </div>
 
