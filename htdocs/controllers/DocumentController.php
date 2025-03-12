@@ -2,6 +2,12 @@
 
 class DocumentController {
     const MAX_FILE_SIZE = 15728640; // 15 MB
+    
+    private $database;
+    
+    public function __construct($db) {
+        $this->database = $db;
+    }
 
     public function listDocuments()
     {
@@ -41,8 +47,13 @@ class DocumentController {
             });
         }
 
-        // Pass the correct current user ID
+        // Pass the correct current user ID and fetch categories
         $currentUserId = $userId;
+        
+        // Load categories for the view
+        require_once __DIR__ . '/../models/Category.php';
+        Category::setDatabase($this->database);
+        $categories = Category::getAll();
 
         include 'views/index.view.php';
     }
@@ -169,21 +180,53 @@ class DocumentController {
     public function showUploadForm() {
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
         $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : ''; // Get category from URL if available
+        
+        // Load categories for the view
+        require_once __DIR__ . '/../models/Category.php';
+        Category::setDatabase($this->database);
+        $categories = Category::getAll();
+        
         require 'views/upload.view.php';
     }
 
     public function uploadDocument() {
         $title = isset($_POST['title']) ? $_POST['title'] : '';
         $description = isset($_POST['description']) ? $_POST['description'] : '';
-        $category = isset($_POST['category']) ? $_POST['category'] : 'Personal';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : 'Personal';
         $userId = isset($_POST['user_id']) ? $_POST['user_id'] : 1; 
         $createdDate = isset($_POST['created_date']) && !empty($_POST['created_date']) ? $_POST['created_date'] : null;
+        
+        // Add detailed logging for debugging
+        error_log("Document upload - POST data received: " . print_r($_POST, true));
+        error_log("Document upload - Category value: '" . $category . "', Length: " . mb_strlen($category));
         
         // Get user object for validation
         $user = User::getById($userId);
         if (!$user) {
             $user = User::getDefault(); // Fallback to default user
             $userId = $user->id;
+        }
+        
+        // Validate category exists in database
+        require_once __DIR__ . '/../models/Category.php';
+        Category::setDatabase($this->database);
+        $validCategories = Category::getAll();
+        $categoryValid = false;
+        
+        error_log("Document upload - Valid categories: " . print_r(array_column($validCategories, 'name'), true));
+        
+        foreach ($validCategories as $validCategory) {
+            if ($validCategory['name'] === $category) {
+                $categoryValid = true;
+                error_log("Document upload - Category '" . $category . "' is valid");
+                break;
+            }
+        }
+        
+        if (!$categoryValid) {
+            // Fallback to default category if invalid
+            error_log("Document upload - Category '" . $category . "' is not valid, falling back to 'Personal'");
+            $category = 'Personal';
         }
         
         $uploadFile = isset($_FILES['document']) ? $_FILES['document'] : null;
@@ -236,9 +279,7 @@ class DocumentController {
             
             if (move_uploaded_file($uploadFile['tmp_name'], $targetFilePath)) {
                 // Initialize database connection
-                $config = require __DIR__ . '/../config.php';
-                $db = new Database($config['database']);
-                Document::setDatabase($db);
+                Document::setDatabase($this->database);
                 
                 // Create and save the document
                 $document = new Document(
@@ -518,11 +559,32 @@ class DocumentController {
                 
                 // Save to database
                 try {
+                    Document::setDatabase($this->database);
                     $document->save();
-                    $importCount++;
-                    error_log("Imported document: " . $doc['title'] . " (ID: " . $doc['id'] . ")");
+                    
+                    // Prepare document details for the success page
+                    $documentDetails = [
+                        'id' => $document->id,
+                        'title' => $doc['title'],
+                        'description' => null, // NULL description as requested
+                        'upload_date' => $doc['upload_date'],
+                        'created_date' => $doc['created_date'] ?? null,
+                        'category' => $doc['category'],
+                        'file_path' => $doc['file_path'],
+                        'original_filename' => $doc['filename'],  // This is the original filename from the upload
+                        'filename' => $doc['filename'],  // This might be modified if there was a duplicate
+                        'file_size' => $this->formatFileSize($doc['file_size']),
+                        'file_type' => $doc['file_type'] ?? '',
+                        'user_id' => $doc['user_id']
+                    ];
+                    
+                    // Show success page with document details
+                    require 'views/upload_success.view.php';
+                    return;
                 } catch (Exception $e) {
-                    error_log("Error importing document " . $doc['title'] . ": " . $e->getMessage());
+                    // If document save fails, display error
+                    $message = "Error saving document to database: " . $e->getMessage();
+                    error_log($message);
                 }
             }
         }
@@ -596,6 +658,7 @@ class DocumentController {
                         );
                         
                         // Save the updated document
+                        Document::setDatabase($this->database);
                         $document->save();
                         $repairedCount++;
                         
@@ -661,4 +724,78 @@ class DocumentController {
         }
     }
 
+    // Add category
+    public function addCategory()
+    {
+        // Check if request method is POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->sendJsonResponse(['success' => false, 'error' => 'Invalid request method']);
+            return;
+        }
+        
+        // Check if category name is provided
+        if (!isset($_POST['name']) || empty(trim($_POST['name']))) {
+            $this->sendJsonResponse(['success' => false, 'error' => 'Category name is required']);
+            return;
+        }
+        
+        $categoryName = trim($_POST['name']);
+        
+        try {
+            // Load the Category model
+            require_once __DIR__ . '/../models/Category.php';
+            Category::setDatabase($this->database);
+            
+            // Create and save new category
+            $category = new Category(null, $categoryName);
+            $category->save();
+            
+            $this->sendJsonResponse(['success' => true, 'id' => $category->id, 'name' => $category->name]);
+        } catch (Exception $e) {
+            $this->sendJsonResponse(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    // Delete category
+    public function deleteCategory()
+    {
+        // Check if request method is POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->sendJsonResponse(['success' => false, 'error' => 'Invalid request method']);
+            return;
+        }
+        
+        // Check if category ID is provided
+        if (!isset($_POST['id']) || empty($_POST['id'])) {
+            $this->sendJsonResponse(['success' => false, 'error' => 'Category ID is required']);
+            return;
+        }
+        
+        $categoryId = $_POST['id'];
+        
+        try {
+            // Load the Category model
+            require_once __DIR__ . '/../models/Category.php';
+            Category::setDatabase($this->database);
+            
+            // Delete category
+            $result = Category::delete($categoryId);
+            
+            if ($result) {
+                $this->sendJsonResponse(['success' => true]);
+            } else {
+                $this->sendJsonResponse(['success' => false, 'error' => 'Category not found']);
+            }
+        } catch (Exception $e) {
+            $this->sendJsonResponse(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    // Helper function to send JSON response
+    private function sendJsonResponse($data)
+    {
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
 }

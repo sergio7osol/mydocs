@@ -40,6 +40,18 @@ class Document {
             throw new Exception("Database connection not established");
         }
 
+        // Ensure category name is properly handled
+        $this->category = trim($this->category);
+        
+        // Add detailed logging for debugging category issues
+        error_log("Document upload - Category before processing: '" . $this->category . "', Length: " . mb_strlen($this->category));
+        
+        // Make sure category doesn't exceed database column length
+        if (mb_strlen($this->category) > 50) {
+            $this->category = mb_substr($this->category, 0, 47) . '...';
+            error_log("Document upload - Category truncated to: '" . $this->category . "', New length: " . mb_strlen($this->category));
+        }
+
         // If ID is set, update existing record
         if ($this->id) {
             $query = "UPDATE documents SET 
@@ -68,28 +80,40 @@ class Document {
                 ':user_id' => $this->user_id
             ];
         } else {
-            $query = "INSERT INTO documents (title, description, upload_date, created_date, category, file_path, filename, file_size, file_type, user_id) 
-                      VALUES (:title, :description, :upload_date, :created_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
-            $params = [
-                ':title' => $this->title,
-                ':description' => $this->description,
-                ':upload_date' => $this->upload_date ? $this->upload_date : date('Y-m-d H:i:s'),
-                ':created_date' => $this->created_date,
-                ':category' => $this->category,
-                ':file_path' => $this->file_path,
-                ':filename' => $this->filename,
-                ':file_size' => $this->file_size,
-                ':file_type' => $this->file_type,
-                ':user_id' => $this->user_id
-            ];
+            try {
+                // Prepare SQL statement
+                $sql = "INSERT INTO documents (title, description, upload_date, created_date, category, file_path, filename, file_size, file_type, user_id) 
+                          VALUES (:title, :description, :upload_date, :created_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
+                
+                error_log("Executing SQL: " . $sql);
+                error_log("SQL Parameters - Title: '" . $this->title . "', Category: '" . $this->category . "'");
+                
+                // Create parameters array for the query method
+                $params = [
+                    ':title' => $this->title,
+                    ':description' => $this->description,
+                    ':upload_date' => $this->upload_date ? $this->upload_date : date('Y-m-d H:i:s'),
+                    ':created_date' => $this->created_date ?? date('Y-m-d H:i:s'),
+                    ':category' => $this->category,
+                    ':file_path' => $this->file_path,
+                    ':filename' => $this->filename,
+                    ':file_size' => $this->file_size,
+                    ':file_type' => $this->file_type,
+                    ':user_id' => $this->user_id
+                ];
+                
+                // Execute the query using the Database class's query method
+                $statement = self::$db->query($sql, $params);
+                
+                $this->id = self::$db->connection->lastInsertId();
+                
+                error_log("Document saved successfully with ID: " . $this->id);
+            } catch (Exception $e) {
+                error_log("Error saving document: " . $e->getMessage());
+                throw $e;
+            }
         }
 
-        $statement = self::$db->query($query, $params);
-        
-        if (!$this->id) {
-            $this->id = self::$db->connection->lastInsertId();
-        }
-        
         return true;
     }
 

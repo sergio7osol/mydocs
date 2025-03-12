@@ -1,6 +1,8 @@
 <?php
 $pageTitle = 'Document Management System';
 include 'partials/start.php';
+
+// Categories are now loaded from the controller
 ?>
 
 
@@ -8,18 +10,21 @@ include 'partials/start.php';
   <h2>Categories</h2>
   <ul>
     <?php
-    $categories = ['Personal', 'Work', 'Others', 'State Office'];
     $currentCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
-    foreach ($categories as $category):
-    ?>
+    foreach ($categories as $category): ?>
       <li>
-        <a href="index.php?route=list&category=<?= urlencode($category) ?>&user_id=<?= $currentUserId ?>"
-          class="<?= ($currentCategory === $category) ? 'active-category' : '' ?>">
-          <?= htmlspecialchars($category) ?>
+        <a href="index.php?route=list&category=<?= urlencode($category['name']) ?>&user_id=<?= $currentUserId ?>"
+          class="<?= ($currentCategory === $category['name']) ? 'active-category' : '' ?>">
+          <?= htmlspecialchars($category['name']) ?>
         </a>
       </li>
     <?php endforeach; ?>
+    <li class="add-category-item">
+      <a href="#" id="add-category-btn">
+        <i class="fa fa-plus-circle"></i> Add Category
+      </a>
+    </li>
   </ul>
 </aside>
 <main class="content">
@@ -144,6 +149,33 @@ include 'partials/start.php';
   </div>
 </main>
 
+<!-- Category Modal -->
+<div id="category-modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Manage Categories</h2>
+    
+    <form id="add-category-form">
+      <div class="form-group">
+        <input type="text" id="new-category-name" placeholder="New category name" required>
+        <button type="submit" class="btn btn-primary">Add Category</button>
+      </div>
+    </form>
+    
+    <div id="categories-list">
+      <h3>Current Categories</h3>
+      <ul>
+        <?php foreach ($categories as $category): ?>
+          <li>
+            <?= htmlspecialchars($category['name']) ?>
+            <button class="delete-category-btn" data-id="<?= $category['id'] ?>">✕</button>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <style>
   /* New styles for the upload button when documents exist */
   .category-upload-button-container {
@@ -168,9 +200,188 @@ include 'partials/start.php';
   .category-upload-button-container .btn-primary:hover {
     background-color: #3a5a8f;
   }
+  
+  /* Add category item styles */
+  .add-category-item {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+  }
+  
+  .add-category-item a {
+    color: #4a6da7;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .add-category-item a:hover {
+    color: #3a5a8f;
+  }
+  
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+  
+  .modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 50%;
+    max-width: 500px;
+  }
+  
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .close:hover {
+    color: #333;
+  }
+  
+  #categories-list {
+    margin-top: 20px;
+  }
+  
+  #categories-list ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  #categories-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .delete-category-btn {
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+  }
+  
+  .form-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  #new-category-name {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
 </style>
 
 <script>
+  // Show/hide the category modal
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('category-modal');
+    const addCategoryBtn = document.getElementById('add-category-btn');
+    const closeBtn = document.querySelector('.close');
+    
+    addCategoryBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      modal.style.display = 'block';
+    });
+    
+    closeBtn.addEventListener('click', function() {
+      modal.style.display = 'none';
+    });
+    
+    window.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+    
+    // Add new category
+    const addCategoryForm = document.getElementById('add-category-form');
+    
+    addCategoryForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const categoryName = document.getElementById('new-category-name').value;
+      if (!categoryName.trim()) return;
+      
+      // Send AJAX request to add category
+      fetch('index.php?route=add_category', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'name=' + encodeURIComponent(categoryName),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Refresh the page to show the new category
+          window.location.reload();
+        } else {
+          alert(data.error || 'Error adding category');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the category');
+      });
+    });
+    
+    // Delete category
+    const deleteBtns = document.querySelectorAll('.delete-category-btn');
+    
+    deleteBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const categoryId = this.getAttribute('data-id');
+        
+        if (confirm('Are you sure you want to delete this category? This cannot be undone.')) {
+          // Send AJAX request to delete category
+          fetch('index.php?route=delete_category', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'id=' + encodeURIComponent(categoryId),
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Refresh the page to update the categories list
+              window.location.reload();
+            } else {
+              alert(data.error || 'Error deleting category');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the category');
+          });
+        }
+      });
+    });
+  });
+  
   function changeUser(userId) {
     // Update user input
     document.getElementById('userInput').value = userId;

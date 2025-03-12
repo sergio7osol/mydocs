@@ -19,9 +19,14 @@ class Database
             // Create PDO connection
             $this->connection = new PDO($dsn, $username, $password, $options);
             
+            // Set character encoding to utf8mb4 for proper handling of special characters
+            $this->connection->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $this->connection->exec("SET CHARACTER SET utf8mb4");
+            
             // Log successful connection in development environments
             if (getenv('DEBUG') === 'true') {
                 error_log("Database connected successfully to {$config['host']}:{$config['port']}");
+                error_log("Character set and collation set to utf8mb4_unicode_ci");
             }
         } catch (PDOException $e) {
             // Log error details

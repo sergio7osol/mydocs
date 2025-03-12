@@ -7,6 +7,9 @@ include 'partials/start.php';
 $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
+// Categories are now loaded from the controller
+$categories = $categories ?? [];
+
 ?>
 
 <div class="upload-box">
@@ -49,10 +52,11 @@ $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
           <div class="upload-form__line upload-form__line--select">
             <label for="category" class="upload-form__line-title">Category:</label>
             <select name="category" id="category" required class="upload-form__line-input">
-              <option value="Personal" <?= (isset($preselectedCategory) && $preselectedCategory === 'Personal') ? 'selected' : '' ?>>Personal</option>
-              <option value="Work" <?= (isset($preselectedCategory) && $preselectedCategory === 'Work') ? 'selected' : '' ?>>Work</option>
-              <option value="Others" <?= (isset($preselectedCategory) && $preselectedCategory === 'Others') ? 'selected' : '' ?>>Others</option>
-              <option value="State Office" <?= (isset($preselectedCategory) && $preselectedCategory === 'State Office') ? 'selected' : '' ?>>State Office</option>
+              <?php foreach ($categories as $category): ?>
+                <option value="<?= htmlspecialchars($category['name']) ?>" <?= ($preselectedCategory === $category['name']) ? 'selected' : '' ?>>
+                  <?= htmlspecialchars($category['name']) ?>
+                </option>
+              <?php endforeach; ?>
             </select>
           </div>
           

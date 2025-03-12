@@ -80,6 +80,16 @@ switch ($route) {
 		$controller = new DocumentController($db);
 		$controller->deleteDocument();
 		break;
+	case 'add_category':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->addCategory();
+		break;
+	case 'delete_category':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->deleteCategory();
+		break;
 	default:
 		include 'views/404.view.php';
 		break;
