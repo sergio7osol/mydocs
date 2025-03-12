@@ -22,7 +22,7 @@ include 'partials/start.php';
     <?php endforeach; ?>
     <li class="add-category-item">
       <a href="#" id="add-category-btn">
-        <i class="fa fa-plus-circle"></i> Add Category
+        ➕ Category ❌
       </a>
     </li>
   </ul>
@@ -51,7 +51,7 @@ include 'partials/start.php';
         </h2>
         <div class="category-actions">
           <a href="index.php?route=list&user_id=<?= $currentUserId ?>" class="btn btn-outline show-all-btn">
-            <i class="fa fa-times-circle"></i> Show All Documents
+          📑 Show All Documents
           </a>
         </div>
       </div>
@@ -133,14 +133,14 @@ include 'partials/start.php';
       
     <?php elseif (isset($_GET['category'])): ?>
       <div class="empty-state">
-        <i class="fa fa-folder-open"></i>
+        📁
         <p>No documents found in category "<?= htmlspecialchars($_GET['category']) ?>".</p>
         <p class="sub-message">Upload a document to this category to see it here.</p>
         <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
       </div>
     <?php else: ?>
       <div class="empty-state">
-        <i class="fa fa-file-o"></i>
+        📄
         <p>No documents found.</p>
         <p class="sub-message">Start by uploading a document using the form below.</p>
         <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?>" class="btn btn-primary">Upload a document</a>
@@ -168,7 +168,7 @@ include 'partials/start.php';
         <?php foreach ($categories as $category): ?>
           <li>
             <?= htmlspecialchars($category['name']) ?>
-            <button class="delete-category-btn" data-id="<?= $category['id'] ?>">✕</button>
+            <button class="delete-category-btn" data-id="<?= $category['id'] ?>">🗑️</button>
           </li>
         <?php endforeach; ?>
       </ul>
@@ -271,13 +271,18 @@ include 'partials/start.php';
   }
   
   .delete-category-btn {
-    background-color: #ff5252;
     color: white;
     border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
+    border-radius: 4px;
+    padding: 5px 8px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .delete-category-btn:hover {
+    background-color: #ff0000;
   }
   
   .form-group {
@@ -292,7 +297,84 @@ include 'partials/start.php';
     border: 1px solid #ddd;
     border-radius: 4px;
   }
+
+  /* Confirmation dialog styles */
+  .confirmation-dialog {
+    display: none; 
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .confirmation-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 450px;
+    text-align: center;
+  }
+
+  .confirmation-content h3 {
+    margin-top: 0;
+    color: #d32f2f;
+  }
+
+  .confirmation-content p {
+    margin: 15px 0;
+  }
+
+  .confirmation-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .btn-confirm {
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .btn-cancel {
+    background-color: #757575;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .btn-confirm:hover {
+    background-color: #b71c1c;
+  }
+
+  .btn-cancel:hover {
+    background-color: #616161;
+  }
 </style>
+
+<!-- Confirmation Dialog for Category Deletion -->
+<div id="confirmation-dialog" class="confirmation-dialog">
+  <div class="confirmation-content">
+    <h3>Delete Category</h3>
+    <p id="confirmation-message">Are you sure you want to delete this category?</p>
+    <div class="confirmation-actions">
+      <button id="confirm-delete" class="btn-confirm">Delete</button>
+      <button id="cancel-delete" class="btn-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // Show/hide the category modal
@@ -348,36 +430,97 @@ include 'partials/start.php';
       });
     });
     
-    // Delete category
+    // Handle confirmation dialog
+    const confirmationDialog = document.getElementById('confirmation-dialog');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+    const confirmationMessage = document.getElementById('confirmation-message');
+    
+    let categoryToDelete = null;
+    
+    // Cancel delete
+    cancelDeleteBtn.addEventListener('click', function() {
+      confirmationDialog.style.display = 'none';
+      categoryToDelete = null;
+    });
+    
+    // Confirm delete
+    confirmDeleteBtn.addEventListener('click', function() {
+      if (!categoryToDelete) return;
+      
+      // Send AJAX request to delete category
+      fetch('index.php?route=delete_category', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'id=' + encodeURIComponent(categoryToDelete),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Refresh the page to update the categories list
+          window.location.reload();
+        } else {
+          alert(data.error || 'Error deleting category');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the category');
+      });
+      
+      // Hide confirmation dialog
+      confirmationDialog.style.display = 'none';
+    });
+    
+    // Click outside to close confirmation dialog
+    window.addEventListener('click', function(e) {
+      if (e.target === confirmationDialog) {
+        confirmationDialog.style.display = 'none';
+        categoryToDelete = null;
+      }
+    });
+    
+    // Delete category - show confirmation dialog with document count
     const deleteBtns = document.querySelectorAll('.delete-category-btn');
     
     deleteBtns.forEach(btn => {
       btn.addEventListener('click', function() {
         const categoryId = this.getAttribute('data-id');
         
-        if (confirm('Are you sure you want to delete this category? This cannot be undone.')) {
-          // Send AJAX request to delete category
-          fetch('index.php?route=delete_category', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'id=' + encodeURIComponent(categoryId),
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Refresh the page to update the categories list
-              window.location.reload();
-            } else {
-              alert(data.error || 'Error deleting category');
+        // First get the document count for this category
+        fetch('index.php?route=get_category_count', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'id=' + encodeURIComponent(categoryId),
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const categoryName = data.name;
+            const documentCount = data.count;
+            
+            // Update confirmation message with document count
+            let message = `Are you sure you want to delete the category "${categoryName}"?`;
+            
+            if (documentCount > 0) {
+              message += `<br><br>This category contains <strong>${documentCount} document${documentCount !== 1 ? 's' : ''}</strong> that will also be deleted.`;
             }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the category');
-          });
-        }
+            
+            confirmationMessage.innerHTML = message;
+            categoryToDelete = categoryId;
+            confirmationDialog.style.display = 'block';
+          } else {
+            alert(data.error || 'Error getting category information');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while getting category information');
+        });
       });
     });
   });

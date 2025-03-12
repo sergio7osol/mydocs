@@ -90,6 +90,11 @@ switch ($route) {
 		$controller = new DocumentController($db);
 		$controller->deleteCategory();
 		break;
+	case 'get_category_count':
+		require_once 'controllers/DocumentController.php';
+		$controller = new DocumentController($db);
+		$controller->getCategoryDocumentCount();
+		break;
 	default:
 		include 'views/404.view.php';
 		break;

@@ -724,70 +724,88 @@ class DocumentController {
         }
     }
 
-    // Add category
-    public function addCategory()
-    {
-        // Check if request method is POST
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->sendJsonResponse(['success' => false, 'error' => 'Invalid request method']);
+    // Add a new category
+    public function addCategory() {
+        if (!isset($_POST['name']) || empty($_POST['name'])) {
+            echo json_encode(['success' => false, 'error' => 'Category name is required']);
             return;
         }
         
-        // Check if category name is provided
-        if (!isset($_POST['name']) || empty(trim($_POST['name']))) {
-            $this->sendJsonResponse(['success' => false, 'error' => 'Category name is required']);
-            return;
-        }
-        
-        $categoryName = trim($_POST['name']);
+        $name = trim($_POST['name']);
         
         try {
-            // Load the Category model
             require_once __DIR__ . '/../models/Category.php';
             Category::setDatabase($this->database);
             
-            // Create and save new category
-            $category = new Category(null, $categoryName);
+            $category = new Category(null, $name);
             $category->save();
             
-            $this->sendJsonResponse(['success' => true, 'id' => $category->id, 'name' => $category->name]);
+            echo json_encode(['success' => true, 'id' => $category->id]);
+            
         } catch (Exception $e) {
-            $this->sendJsonResponse(['success' => false, 'error' => $e->getMessage()]);
+            error_log("Error adding category: " . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
     
-    // Delete category
-    public function deleteCategory()
-    {
-        // Check if request method is POST
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->sendJsonResponse(['success' => false, 'error' => 'Invalid request method']);
-            return;
-        }
-        
-        // Check if category ID is provided
+    // Get category document count
+    public function getCategoryDocumentCount() {
         if (!isset($_POST['id']) || empty($_POST['id'])) {
-            $this->sendJsonResponse(['success' => false, 'error' => 'Category ID is required']);
+            echo json_encode(['success' => false, 'error' => 'Category ID is required']);
             return;
         }
         
         $categoryId = $_POST['id'];
         
         try {
-            // Load the Category model
             require_once __DIR__ . '/../models/Category.php';
             Category::setDatabase($this->database);
             
-            // Delete category
+            // Get category name
+            $category = Category::getById($categoryId);
+            if (!$category) {
+                echo json_encode(['success' => false, 'error' => 'Category not found']);
+                return;
+            }
+            
+            // Count documents in this category
+            require_once __DIR__ . '/../models/Document.php';
+            Document::setDatabase($this->database);
+            $documents = Document::getByCategory($category->name);
+            $count = count($documents);
+            
+            echo json_encode(['success' => true, 'count' => $count, 'name' => $category->name]);
+            
+        } catch (Exception $e) {
+            error_log("Error getting category document count: " . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    
+    // Delete a category and its documents
+    public function deleteCategory() {
+        if (!isset($_POST['id']) || empty($_POST['id'])) {
+            echo json_encode(['success' => false, 'error' => 'Category ID is required']);
+            return;
+        }
+        
+        $categoryId = $_POST['id'];
+        
+        try {
+            require_once __DIR__ . '/../models/Category.php';
+            Category::setDatabase($this->database);
+            
+            // Delete the category and all associated documents
             $result = Category::delete($categoryId);
             
-            if ($result) {
-                $this->sendJsonResponse(['success' => true]);
-            } else {
-                $this->sendJsonResponse(['success' => false, 'error' => 'Category not found']);
-            }
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Category deleted successfully along with ' . $result['count'] . ' document(s)'
+            ]);
+            
         } catch (Exception $e) {
-            $this->sendJsonResponse(['success' => false, 'error' => $e->getMessage()]);
+            error_log("Error deleting category: " . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
     
