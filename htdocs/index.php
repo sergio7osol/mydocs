@@ -1,6 +1,6 @@
 <?php
 
-include('error_log.php');
+include('debug/error_log.php');
 // include('debug.php'); 
 
 session_start(); // Start session for flash messages
@@ -28,7 +28,7 @@ User::setDatabase($db);
 
 // Add a simple log entry for requests
 file_put_contents(
-	__DIR__ . '/access.log',
+	__DIR__ . '/debug/access.log',
 	date('[Y-m-d H:i:s]') . ' ' .
 		$_SERVER['REQUEST_METHOD'] . ' ' .
 		$_SERVER['REQUEST_URI'] . ' ' .

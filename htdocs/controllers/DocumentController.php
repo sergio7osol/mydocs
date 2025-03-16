@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../Validator.php';
+
 class DocumentController {
     const MAX_FILE_SIZE = 15728640; // 15 MB
     
@@ -186,7 +188,7 @@ class DocumentController {
         Category::setDatabase($this->database);
         $categories = Category::getAll();
         
-        require 'views/upload.view.php';
+        require 'views/create/index.view.php';
     }
 
     public function uploadDocument() {
@@ -196,13 +198,47 @@ class DocumentController {
         $userId = isset($_POST['user_id']) ? $_POST['user_id'] : 1; 
         $createdDate = isset($_POST['created_date']) && !empty($_POST['created_date']) ? $_POST['created_date'] : null;
         
-        // Add detailed logging for debugging
         error_log("Document upload - POST data received: " . print_r($_POST, true));
         error_log("Document upload - Category value: '" . $category . "', Length: " . mb_strlen($category));
+        
+        $errors = [];
+
+        if (!Validator::string($title, 1, 70)) {
+            $errors['title'] = "Document title is required";
+        }
+        
+        // Validate description length
+        if (!empty($description) && mb_strlen($description) > 300) {
+            $errors['description'] = "Description is too long (maximum 300 characters)";
+        }
+        
+        // Validate file upload
+        $uploadFile = isset($_FILES['document']) ? $_FILES['document'] : null;
+        if (!$uploadFile || !isset($uploadFile['tmp_name']) || empty($uploadFile['tmp_name'])) {
+            $errors['document'] = "Please select a document to upload";
+        } elseif ($uploadFile['error'] !== UPLOAD_ERR_OK) {
+            $errors['document'] = "File upload error: " . $this->getFileUploadErrorMessage($uploadFile['error']);
+        } elseif ($uploadFile['size'] > self::MAX_FILE_SIZE) {
+            $errors['document'] = "The uploaded file exceeds the maximum allowed size of " . $this->formatFileSize(self::MAX_FILE_SIZE);
+        }
+        
+        // Validate file type
+        if ($uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+            $allowedExtensions = ['pdf', 'doc', 'docx', 'txt'];
+            
+            $fileInfo = pathinfo($uploadFile['name']);
+            $extension = strtolower($fileInfo['extension'] ?? '');
+            
+            if (!in_array($uploadFile['type'], $allowedTypes) && !in_array($extension, $allowedExtensions)) {
+                $errors['document'] = "Invalid file type. Allowed types: PDF, DOC, DOCX, TXT";
+            }
+        }
         
         // Get user object for validation
         $user = User::getById($userId);
         if (!$user) {
+            $errors['user_id'] = "Invalid user ID";
             $user = User::getDefault(); // Fallback to default user
             $userId = $user->id;
         }
@@ -224,18 +260,33 @@ class DocumentController {
         }
         
         if (!$categoryValid) {
+            $errors['category'] = "Selected category does not exist";
             // Fallback to default category if invalid
             error_log("Document upload - Category '" . $category . "' is not valid, falling back to 'Personal'");
             $category = 'Personal';
         }
         
-        $uploadFile = isset($_FILES['document']) ? $_FILES['document'] : null;
+        // Validate created date format if provided
+        if (!empty($createdDate)) {
+            $dateTimestamp = strtotime($createdDate);
+            if ($dateTimestamp === false) {
+                $errors['created_date'] = "Invalid date format";
+            } elseif ($dateTimestamp > time()) {
+                $errors['created_date'] = "Created date cannot be in the future";
+            }
+        }
+        
+        if (!empty($errors)) {
+            require 'views/create/index.view.php';
+            return;
+        }
+        
         $message = '';
         
         if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
             if ($uploadFile['size'] > self::MAX_FILE_SIZE) {
                 $message = "Error: The uploaded file exceeds the maximum allowed size of " . $this->formatFileSize(self::MAX_FILE_SIZE) . ".";
-                require 'views/upload.view.php';
+                require 'views/create/index.view.php';
                 return;
             }
             
@@ -316,7 +367,7 @@ class DocumentController {
                     ];
                     
                     // Show success page with document details
-                    require 'views/upload_success.view.php';
+                    require 'views/create/success.view.php';
                     return;
                 } catch (Exception $e) {
                     // If document save fails, display error
@@ -331,7 +382,7 @@ class DocumentController {
         }
         
         // If we get here, something went wrong
-        require 'views/upload.view.php';
+        require 'views/create/index.view.php';
     }
 
     public function viewDocument() {
@@ -348,7 +399,7 @@ class DocumentController {
             exit;
         }
         
-        include 'views/view.view.php';
+        include 'views/show.view.php';
     }
 
     /**
@@ -579,7 +630,7 @@ class DocumentController {
                     ];
                     
                     // Show success page with document details
-                    require 'views/upload_success.view.php';
+                    require 'views/create/success.view.php';
                     return;
                 } catch (Exception $e) {
                     // If document save fails, display error

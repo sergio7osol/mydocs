@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Upload Successful';
-include 'partials/start.php';
+require_once 'views/partials/start.php';
 
 // Get current user ID from documentDetails
 $currentUserId = $documentDetails['user_id']; 
@@ -70,4 +70,4 @@ try {
   </div>
 </div>
 
-<?php include 'partials/end.php'; ?>
+<?php include 'views/partials/end.php'; ?>

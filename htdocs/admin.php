@@ -3,7 +3,7 @@
 define('APP_ROOT', __DIR__);
 
 // Include essential files
-require_once APP_ROOT . '/error_log.php';
+require_once APP_ROOT . '/debug/error_log.php';
 require_once APP_ROOT . '/Database.php';
 require_once APP_ROOT . '/models/Document.php';
 require_once APP_ROOT . '/controllers/DocumentController.php';

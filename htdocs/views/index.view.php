@@ -51,7 +51,7 @@ include 'partials/start.php';
         </h2>
         <div class="category-actions">
           <a href="index.php?route=list&user_id=<?= $currentUserId ?>" class="btn btn-outline show-all-btn">
-          📑 Show All Documents
+            📑 Show All Documents
           </a>
         </div>
       </div>
