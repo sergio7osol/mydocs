@@ -1,0 +1,5 @@
+[16-Mar-2025 15:58:58 UTC] Database connection failed: SQLSTATE[HY000] [2002] No such file or directory
+[16-Mar-2025 15:58:58 UTC] Connection details: host=localhost, port=3307, dbname=mydocs_database
+[2025-03-16 15:58:58] Exception: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory in /var/www/html/Database.php on line 37
+Stack trace: #0 /var/www/html/public/index.php(28): Database->__construct(Array)
+#1 {main}
