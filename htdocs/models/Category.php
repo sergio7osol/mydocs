@@ -11,12 +11,10 @@ class Category {
         $this->name = $name;
     }
     
-    // Set database connection
     public static function setDatabase($database) {
         self::$db = $database;
     }
 
-    // Save category to database
     public function save() {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -43,7 +41,6 @@ class Category {
         return true;
     }
 
-    // Get all categories
     public static function getAll() {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -60,7 +57,6 @@ class Category {
         }
     }
 
-    // Get category by ID
     public static function getById($id) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -79,7 +75,6 @@ class Category {
         return new Category($data['id'], $data['name']);
     }
 
-    // Delete category by ID
     public static function delete($id) {
         if (!self::$db) {
             throw new Exception("Database connection not established");

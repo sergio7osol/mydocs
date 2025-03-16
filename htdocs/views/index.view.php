@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Document Management System';
-include 'partials/start.php';
+include base_path('views/partials/start.php');
 
 // Categories are now loaded from the controller
 ?>

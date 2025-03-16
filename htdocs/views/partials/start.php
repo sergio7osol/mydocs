@@ -8,12 +8,12 @@ $pageTitle = isset($pageTitle) ? $pageTitle . ' - Documents Management' : 'Docum
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title><?= htmlspecialchars($pageTitle) ?></title>
-	<link rel="stylesheet" href="/public/base.css">
+	<link rel="stylesheet" href="/base.css">
 	<?php if (isset($styles)) echo $styles; ?>
 </head>
 
 <body>
 	<div class="main-container">
-		<?php include 'header.php' ?>
+		<?php include base_path('views/partials/header.php') ?>
 
 		<main class="main-content">

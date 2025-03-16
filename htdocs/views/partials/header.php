@@ -1,11 +1,15 @@
 <header class="main-header">
     <?php
     // Make sure DocumentController is available
-    require_once 'controllers/DocumentController.php';
+    require_once base_path('controllers/DocumentController.php');
+    // Include User model
+    require_once base_path('models/User.php');
 
     $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 
     try {
+        // Set the database for User class
+        User::setDatabase($GLOBALS['database']);
         $users = User::getAll();
 
         // Get document counts per user

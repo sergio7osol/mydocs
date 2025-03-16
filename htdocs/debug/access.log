@@ -1,0 +1,6 @@
+[2025-03-16 16:56:23] GET /doc/upload?user_id=1&category=New-1 GET: {"user_id":"1","category":"New-1"}
+[2025-03-16 16:56:26] GET /index.php GET: []
+[2025-03-16 16:56:27] GET /doc/upload?user_id=1&category=New-1 GET: {"user_id":"1","category":"New-1"}
+[2025-03-16 16:56:33] GET /doc/upload?user_id=1&category=New-1 GET: {"user_id":"1","category":"New-1"}
+[2025-03-16 16:56:37] GET /index.php GET: []
+[2025-03-16 16:56:37] GET /doc/upload?user_id=1&category=New-1 GET: {"user_id":"1","category":"New-1"}

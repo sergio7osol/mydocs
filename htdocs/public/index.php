@@ -1,10 +1,11 @@
 <?php
 
-const BASE_PATH = __DIR__ . '/../';
+// Define the base path to point directly to the htdocs directory
+define('BASE_PATH', dirname(__DIR__) . '/');
 
-require_once BASE_PATH . '/utils.php';
+require_once BASE_PATH . 'utils.php';
 
-include_once base_path('/debug/error_log.php');
+include_once base_path('debug/error_log.php');
 // include('debug.php'); 
 
 session_start(); // Start session for flash messages
@@ -14,17 +15,19 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
-if (file_exists('/.dockerenv') || getenv('DOCKER_ENV') === 'true') {
-	putenv('DOCKER_ENV=true');
-}
+// Force Docker environment for now since we're running in Docker
+putenv('DOCKER_ENV=true');
 
-require_once base_path('/Database.php');
-require_once base_path('/models/Document.php');
-require_once base_path('/models/User.php');
+require_once base_path('Database.php');
+require_once base_path('models/Document.php');
+require_once base_path('models/User.php');
 
 // Initialize database connection
-$config = require base_path('/config.php');
+$config = require base_path('config.php');
 $db = new Database($config['database']);
+
+// Make database connection available globally
+$GLOBALS['database'] = $db;
 
 // Set the database connection for the models
 Document::setDatabase($db);
@@ -32,7 +35,7 @@ User::setDatabase($db);
 
 // Add a simple log entry for requests
 file_put_contents(
-	base_path('/debug/access.log'),
+	base_path('debug/access.log'),
 	date('[Y-m-d H:i:s]') . ' ' .
 		$_SERVER['REQUEST_METHOD'] . ' ' .
 		$_SERVER['REQUEST_URI'] . ' ' .
@@ -55,51 +58,51 @@ if ($requestUri == '/doc/upload') {
 
 switch ($route) {
 	case 'list':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->listDocuments();
 		break;
 	case 'upload':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->showUploadForm();
 		break;
 	case 'upload_post':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->uploadDocument();
 		break;
 	case 'view':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->viewDocument();
 		break;
 	case 'download':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->downloadDocument();
 		break;
 	case 'delete':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->deleteDocument();
 		break;
 	case 'add_category':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->addCategory();
 		break;
 	case 'delete_category':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->deleteCategory();
 		break;
 	case 'get_category_count':
-		require_once base_path('/controllers/DocumentController.php');
+		require_once base_path('controllers/DocumentController.php');
 		$controller = new DocumentController($db);
 		$controller->getCategoryDocumentCount();
 		break;
 	default:
-		include base_path('/views/404.view.php');
+		view('404.view.php');
 		break;
 }

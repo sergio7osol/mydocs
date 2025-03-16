@@ -1,5 +1,6 @@
-[16-Mar-2025 15:58:58 UTC] Database connection failed: SQLSTATE[HY000] [2002] No such file or directory
-[16-Mar-2025 15:58:58 UTC] Connection details: host=localhost, port=3307, dbname=mydocs_database
-[2025-03-16 15:58:58] Exception: Database connection failed: SQLSTATE[HY000] [2002] No such file or directory in /var/www/html/Database.php on line 37
-Stack trace: #0 /var/www/html/public/index.php(28): Database->__construct(Array)
-#1 {main}
+[2025-03-16 16:56:33] Error (2): require_once(views/partials/start.php): Failed to open stream: No such file or directory in /var/www/html/views/create/index.view.php on line 5
+[2025-03-16 16:56:33] Exception: Failed opening required 'views/partials/start.php' (include_path='.:/usr/local/lib/php') in /var/www/html/views/create/index.view.php on line 5
+Stack trace: #0 /var/www/html/utils.php(21): require_once()
+#1 /var/www/html/controllers/DocumentController.php(197): view('create/index.vi...', Array)
+#2 /var/www/html/public/index.php(68): DocumentController->showUploadForm()
+#3 {main}

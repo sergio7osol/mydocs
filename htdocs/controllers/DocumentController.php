@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../Validator.php';
+require_once base_path('Validator.php');
 
 class DocumentController {
     const MAX_FILE_SIZE = 15728640; // 15 MB
@@ -53,11 +53,15 @@ class DocumentController {
         $currentUserId = $userId;
         
         // Load categories for the view
-        require_once __DIR__ . '/../models/Category.php';
+        require_once base_path('models/Category.php');
         Category::setDatabase($this->database);
         $categories = Category::getAll();
 
-        include 'views/index.view.php';
+        include view('index.view.php', [
+            'categories' => $categories,
+            'documents' => $documents,
+            'currentUserId' => $currentUserId
+        ]);
     }
     
     /**
@@ -184,11 +188,14 @@ class DocumentController {
         $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : ''; // Get category from URL if available
         
         // Load categories for the view
-        require_once __DIR__ . '/../models/Category.php';
+        require_once base_path('models/Category.php');
         Category::setDatabase($this->database);
         $categories = Category::getAll();
         
-        require 'views/create/index.view.php';
+        include view('create/index.view.php', [
+            'categories' => $categories,
+            'preselectedCategory' => $preselectedCategory
+        ]);
     }
 
     public function uploadDocument() {
@@ -244,7 +251,7 @@ class DocumentController {
         }
         
         // Validate category exists in database
-        require_once __DIR__ . '/../models/Category.php';
+        require_once base_path('models/Category.php');
         Category::setDatabase($this->database);
         $validCategories = Category::getAll();
         $categoryValid = false;
@@ -277,7 +284,13 @@ class DocumentController {
         }
         
         if (!empty($errors)) {
-            require 'views/create/index.view.php';
+            include view('create/index.view.php', [
+                'errors' => $errors,
+                'title' => $title,
+                'description' => $description,
+                'category' => $category,
+                'userId' => $userId
+            ]);
             return;
         }
         
@@ -286,7 +299,13 @@ class DocumentController {
         if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
             if ($uploadFile['size'] > self::MAX_FILE_SIZE) {
                 $message = "Error: The uploaded file exceeds the maximum allowed size of " . $this->formatFileSize(self::MAX_FILE_SIZE) . ".";
-                require 'views/create/index.view.php';
+                include view('create/index.view.php', [
+                    'errors' => ['document' => $message],
+                    'title' => $title,
+                    'description' => $description,
+                    'category' => $category,
+                    'userId' => $userId
+                ]);
                 return;
             }
             
@@ -295,7 +314,7 @@ class DocumentController {
             $targetFileName = $originalFileName;
             
             // Create category-specific directory structure
-            $targetPath = getenv('DOCKER_ENV') === 'true' ? '/var/www/html/uploads/' : __DIR__ . '/../uploads/';
+            $targetPath = getenv('DOCKER_ENV') === 'true' ? '/var/www/html/uploads/' : base_path('uploads/');
             $userPath = $targetPath . $userId . '/';
             $categoryPath = $userPath . $category . '/';
             
@@ -367,7 +386,9 @@ class DocumentController {
                     ];
                     
                     // Show success page with document details
-                    require 'views/create/success.view.php';
+                    include view('create/success.view.php', [
+                        'documentDetails' => $documentDetails
+                    ]);
                     return;
                 } catch (Exception $e) {
                     // If document save fails, display error
@@ -382,7 +403,13 @@ class DocumentController {
         }
         
         // If we get here, something went wrong
-        require 'views/create/index.view.php';
+        include view('create/index.view.php', [
+            'errors' => ['document' => $message],
+            'title' => $title,
+            'description' => $description,
+            'category' => $category,
+            'userId' => $userId
+        ]);
     }
 
     public function viewDocument() {
@@ -399,7 +426,9 @@ class DocumentController {
             exit;
         }
         
-        include 'views/show.view.php';
+        include view('show.view.php', [
+            'document' => $document
+        ]);
     }
 
     /**
@@ -449,7 +478,7 @@ class DocumentController {
         
         // If file not found or other error
         header('HTTP/1.0 404 Not Found');
-        include 'views/404.view.php';
+        include view('404.view.php');
     }
     
     /**
@@ -630,7 +659,9 @@ class DocumentController {
                     ];
                     
                     // Show success page with document details
-                    require 'views/create/success.view.php';
+                    include view('create/success.view.php', [
+                        'documentDetails' => $documentDetails
+                    ]);
                     return;
                 } catch (Exception $e) {
                     // If document save fails, display error
@@ -785,7 +816,7 @@ class DocumentController {
         $name = trim($_POST['name']);
         
         try {
-            require_once __DIR__ . '/../models/Category.php';
+            require_once base_path('models/Category.php');
             Category::setDatabase($this->database);
             
             $category = new Category(null, $name);
@@ -809,7 +840,7 @@ class DocumentController {
         $categoryId = $_POST['id'];
         
         try {
-            require_once __DIR__ . '/../models/Category.php';
+            require_once base_path('models/Category.php');
             Category::setDatabase($this->database);
             
             // Get category name
@@ -820,7 +851,7 @@ class DocumentController {
             }
             
             // Count documents in this category
-            require_once __DIR__ . '/../models/Document.php';
+            require_once base_path('models/Document.php');
             Document::setDatabase($this->database);
             $documents = Document::getByCategory($category->name);
             $count = count($documents);
@@ -843,7 +874,7 @@ class DocumentController {
         $categoryId = $_POST['id'];
         
         try {
-            require_once __DIR__ . '/../models/Category.php';
+            require_once base_path('models/Category.php');
             Category::setDatabase($this->database);
             
             // Delete the category and all associated documents

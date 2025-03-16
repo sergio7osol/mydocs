@@ -13,5 +13,10 @@ function urlIs($value) {
 }
 
 function base_path($path) {
-  return BASE_PATH . $path;
+  return rtrim(BASE_PATH, '/') . '/' . ltrim($path, '/');
+}
+
+function view($path, $attributes = []) {
+  extract($attributes);
+  return require_once base_path('views/' . $path);
 }
