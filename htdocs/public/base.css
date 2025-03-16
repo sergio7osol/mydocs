@@ -764,6 +764,30 @@ body, *:not(svg *, path), *::before, *::after {
 	font-style: italic;
 }
 
+.upload-form__line-size {
+	background: #eee;
+	padding: 3px 6px;
+	border-radius: 3px;
+	color: #666;
+}
+
+/* Error message styling for form validation */
+.error-message {
+    color: #dc3545;
+    font-size: 0.85em;
+    margin-top: 0.3em;
+    padding: 0.3em 0;
+    font-weight: 500;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.1rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.upload-form__line-input.is-invalid {
+    background-color: #fff8f8;
+}
 
 .upload-form__line--file .upload-form__line-input {
 	border: 1px dashed #ccc;

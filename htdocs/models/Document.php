@@ -34,22 +34,64 @@ class Document {
         self::$db = $database;
     }
 
-    // Save document to database
     public function save() {
         if (!self::$db) {
             throw new Exception("Database connection not established");
         }
 
-        // Ensure category name is properly handled
+        $this->id = $this->id ? filter_var($this->id, FILTER_VALIDATE_INT) : null; // id: INT(11) - AUTO_INCREMENT
+        
+        $this->title = trim(mb_substr($this->title, 0, 70)); // title: VARCHAR(255) - utf8mb4_unicode_ci
+        
+        // description: MEDIUMTEXT - utf8mb4_unicode_ci, can be NULL
+        if ($this->description !== null) {
+            $this->description = trim($this->description);
+        }
+        
+        $this->filename = trim(mb_substr($this->filename, 0, 50)); // filename: VARCHAR(255) - utf8mb4_unicode_ci
+        
+        $this->file_path = trim(mb_substr($this->file_path, 0, 255)); // file_path: VARCHAR(255) - utf8mb4_unicode_ci
+        
+        $this->file_size = (int)$this->file_size; // file_size: INT(11)
+        
+        $this->file_type = trim(mb_substr($this->file_type, 0, 50)); // file_type: VARCHAR(50)
+        
+        // category: VARCHAR(50) - utf8mb4_unicode_ci
         $this->category = trim($this->category);
-        
-        // Add detailed logging for debugging category issues
         error_log("Document upload - Category before processing: '" . $this->category . "', Length: " . mb_strlen($this->category));
-        
-        // Make sure category doesn't exceed database column length
         if (mb_strlen($this->category) > 50) {
             $this->category = mb_substr($this->category, 0, 47) . '...';
             error_log("Document upload - Category truncated to: '" . $this->category . "', New length: " . mb_strlen($this->category));
+        }
+        
+        $this->user_id = (int)$this->user_id; // user_id: INT(11)
+        
+        // upload_date: DATETIME
+        if (empty($this->upload_date)) {
+            $this->upload_date = date('Y-m-d H:i:s');
+        } else if (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $this->upload_date)) {
+            // Convert to proper MySQL DATETIME format if not already
+            $timestamp = strtotime($this->upload_date);
+            if ($timestamp) {
+                $this->upload_date = date('Y-m-d H:i:s', $timestamp);
+            } else {
+                $this->upload_date = date('Y-m-d H:i:s');
+            }
+        }
+        
+        // created_date: DATE - can be NULL
+        if ($this->created_date !== null && $this->created_date !== '') {
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->created_date)) {
+                // Convert to proper MySQL DATE format if not already
+                $timestamp = strtotime($this->created_date);
+                if ($timestamp) {
+                    $this->created_date = date('Y-m-d', $timestamp);
+                } else {
+                    $this->created_date = null; // Set to NULL if invalid
+                }
+            }
+        } else {
+            $this->created_date = null; // Explicitly set to NULL if empty
         }
 
         // If ID is set, update existing record
@@ -79,21 +121,27 @@ class Document {
                 ':file_type' => $this->file_type,
                 ':user_id' => $this->user_id
             ];
+            
+            try {
+                $statement = self::$db->query($query, $params);
+                return $statement->rowCount() > 0;
+            } catch (Exception $e) {
+                error_log("Error updating document: " . $e->getMessage());
+                throw $e;
+            }
         } else {
             try {
-                // Prepare SQL statement
                 $sql = "INSERT INTO documents (title, description, upload_date, created_date, category, file_path, filename, file_size, file_type, user_id) 
                           VALUES (:title, :description, :upload_date, :created_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
                 
                 error_log("Executing SQL: " . $sql);
                 error_log("SQL Parameters - Title: '" . $this->title . "', Category: '" . $this->category . "'");
                 
-                // Create parameters array for the query method
                 $params = [
                     ':title' => $this->title,
                     ':description' => $this->description,
-                    ':upload_date' => $this->upload_date ? $this->upload_date : date('Y-m-d H:i:s'),
-                    ':created_date' => $this->created_date ?? date('Y-m-d H:i:s'),
+                    ':upload_date' => $this->upload_date,
+                    ':created_date' => $this->created_date,
                     ':category' => $this->category,
                     ':file_path' => $this->file_path,
                     ':filename' => $this->filename,
@@ -102,12 +150,12 @@ class Document {
                     ':user_id' => $this->user_id
                 ];
                 
-                // Execute the query using the Database class's query method
                 $statement = self::$db->query($sql, $params);
                 
                 $this->id = self::$db->connection->lastInsertId();
                 
                 error_log("Document saved successfully with ID: " . $this->id);
+                return true;
             } catch (Exception $e) {
                 error_log("Error saving document: " . $e->getMessage());
                 throw $e;
@@ -117,7 +165,6 @@ class Document {
         return true;
     }
 
-    // Get all documents
     public static function getAll($user = null) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -158,7 +205,6 @@ class Document {
         }
     }
 
-    // Get document by ID
     public static function getById($id, $userId = null) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -195,7 +241,6 @@ class Document {
         );
     }
 
-    // Get documents by category
     public static function getByCategory($category, $user = null) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -231,7 +276,6 @@ class Document {
         return $statement->fetchAll();
     }
 
-    // Delete document by ID
     public static function deleteById($id) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -249,7 +293,6 @@ class Document {
         return $statement->rowCount() > 0;
     }
 
-    // Check if documents exist in the database
     public static function hasDocuments() {
         if (!self::$db) {
             throw new Exception("Database connection not established");
@@ -262,7 +305,7 @@ class Document {
         return $result['count'] > 0;
     }
 
-    // New method: Get formatted created date (DD.MM.YYYY)
+    // DD.MM.YYYY
     public function getFormattedCreatedDate() {
         if (empty($this->created_date)) {
             return '';
@@ -271,7 +314,7 @@ class Document {
         return $date->format('d.m.Y');
     }
     
-    // New method: Get formatted upload date with time (DD.MM.YYYY HH:MM:SS)
+    // DD.MM.YYYY HH:MM:SS
     public function getFormattedUploadDate() {
         if (empty($this->upload_date)) {
             return '';
