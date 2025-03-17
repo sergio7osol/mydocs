@@ -1,6 +1,3 @@
-<?php
-$pageTitle = isset($pageTitle) ? $pageTitle . ' - Documents Management' : 'Documents Management';
-?>
 <!DOCTYPE html>
 <html lang="de">
 
@@ -14,6 +11,6 @@ $pageTitle = isset($pageTitle) ? $pageTitle . ' - Documents Management' : 'Docum
 
 <body>
 	<div class="main-container">
-		<?php include base_path('views/partials/header.php') ?>
+		<?php view('partials/header.php') ?>
 
 		<main class="main-content">

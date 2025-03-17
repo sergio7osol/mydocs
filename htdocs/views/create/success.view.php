@@ -1,6 +1,5 @@
 <?php
-$pageTitle = 'Upload Successful';
-require_once 'views/partials/start.php';
+view('partials/start.php', ['pageTitle' => $pageTitle ?? 'Upload Successful']);
 
 // Get current user ID from documentDetails
 $currentUserId = $documentDetails['user_id']; 
@@ -65,9 +64,9 @@ try {
   </div>
   
   <div style="text-align: center; margin-top: 2em;">
-    <a href="index.php?route=list&category=<?= htmlspecialchars($documentDetails['category']) ?>&user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-primary">View Documents</a>
+    <a href="/?route=list&category=<?= htmlspecialchars($documentDetails['category']) ?>&user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-primary">View Documents</a>
     <a href="/doc/upload?user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-success">Upload Another Document</a>
   </div>
 </div>
 
-<?php include 'views/partials/end.php'; ?>
+<?php view('partials/end.php'); ?>

@@ -1,8 +1,5 @@
 <?php
-$pageTitle = 'Document Management System';
-include base_path('views/partials/start.php');
-
-// Categories are now loaded from the controller
+view('partials/start.php', ['pageTitle' => $pageTitle]);
 ?>
 
 
@@ -10,11 +7,10 @@ include base_path('views/partials/start.php');
   <h2>Categories</h2>
   <ul>
     <?php
-    $currentCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
     foreach ($categories as $category): ?>
       <li>
-        <a href="index.php?route=list&category=<?= urlencode($category['name']) ?>&user_id=<?= $currentUserId ?>"
+        <a href="/?route=list&category=<?= urlencode($category['name']) ?>&user_id=<?= $currentUserId ?>"
           class="<?= ($currentCategory === $category['name']) ? 'active-category' : '' ?>">
           <?= htmlspecialchars($category['name']) ?>
         </a>
@@ -29,19 +25,16 @@ include base_path('views/partials/start.php');
 </aside>
 <main class="content">
   <?php
-  // Ensure we're accurately counting documents 
-  $currentCategory = isset($_GET['category']) ? $_GET['category'] : '';
   $documentCount = count($documents);
   
-  // Debugging
   error_log("Document count in view: " . $documentCount . " for user: " . $currentUserId . " and category: " . $currentCategory);
   ?>
   <div class="content-header">
     <h1>Documents</h1>
-    <?php if (isset($_GET['category'])): ?>
+    <?php if (isset($currentCategory)): ?>
       <div class="category-header">
         <h2>
-          Category: <?= htmlspecialchars($_GET['category']) ?>
+          Category: <?= htmlspecialchars($currentCategory) ?>
           <div class="document-counter">
             <div class="document-counter-inner">
               <span class="counter-number"><?= $documentCount ?></span>
@@ -50,7 +43,7 @@ include base_path('views/partials/start.php');
           </div>
         </h2>
         <div class="category-actions">
-          <a href="index.php?route=list&user_id=<?= $currentUserId ?>" class="btn btn-outline show-all-btn">
+          <a href="/?route=list&user_id=<?= $currentUserId ?>" class="btn btn-outline show-all-btn">
             📑 Show All Documents
           </a>
         </div>
@@ -70,11 +63,11 @@ include base_path('views/partials/start.php');
     <?php endif; ?>
     
     <!-- Search form -->
-    <form class="search-form" action="index.php" method="get">
+    <form class="search-form" action="/" method="get">
       <input type="hidden" name="route" value="list">
       <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
-      <?php if (isset($_GET['category'])): ?>
-        <input type="hidden" name="category" value="<?= htmlspecialchars($_GET['category']) ?>">
+      <?php if (isset($currentCategory)): ?>
+        <input type="hidden" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
       <?php endif; ?>
       <input type="text" name="search" placeholder="Search documents" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
       <button type="submit" class="search-button">Search</button>
@@ -101,7 +94,7 @@ include base_path('views/partials/start.php');
     <?php if (!empty($documents)): ?>
       <?php foreach ($documents as $doc): ?>
         <div class="document-item" data-id="<?= $doc['id'] ?>" data-user-id="<?= $currentUserId ?>">
-          <a href="index.php?route=delete&id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?><?= isset($_GET['category']) && !empty($_GET['category']) ? '&category=' . htmlspecialchars($_GET['category']) : '' ?>" 
+          <a href="/?route=delete&id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?><?= isset($currentCategory) ? '&category=' . htmlspecialchars($currentCategory) : '' ?>" 
              class="delete-document" 
              title="Delete document"
              onclick="return confirm('Are you sure you want to delete this document?');">
@@ -112,7 +105,7 @@ include base_path('views/partials/start.php');
               <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
           </a>
-          <div class="document-item-content" onclick="window.location='index.php?route=view&id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
+          <div class="document-item-content" onclick="window.location='/?route=view&id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
             <div class="document-item-title-area">
               <h3><?= htmlspecialchars($doc['title']) ?></h3>
               <?php if (!empty($doc['description'])): ?>
@@ -125,25 +118,25 @@ include base_path('views/partials/start.php');
         </div>
       <?php endforeach; ?>
       
-      <?php if (isset($_GET['category'])): ?>
+      <?php if (isset($currentCategory)): ?>
         <div class="category-upload-button-container">
-          <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?><?= isset($_GET['category']) ? '&category=' . htmlspecialchars($_GET['category']) : '' ?>" class="btn btn-primary">Upload to this category</a>
+          <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?><?= isset($currentCategory) ? '&category=' . htmlspecialchars($currentCategory) : '' ?>" class="btn btn-primary">Upload to this category</a>
         </div>
       <?php endif; ?>
       
-    <?php elseif (isset($_GET['category'])): ?>
+    <?php elseif (isset($currentCategory)): ?>
       <div class="empty-state">
-        📁
-        <p>No documents found in category "<?= htmlspecialchars($_GET['category']) ?>".</p>
+        📄
+        <p>No documents found in category "<?= htmlspecialchars($currentCategory) ?>".</p>
         <p class="sub-message">Upload a document to this category to see it here.</p>
-        <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?>&category=<?= htmlspecialchars($_GET['category']) ?>" class="btn btn-primary">Upload to this category</a>
+        <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>&category=<?= htmlspecialchars($currentCategory) ?>" class="btn btn-primary">Upload to this category</a>
       </div>
     <?php else: ?>
       <div class="empty-state">
         📄
         <p>No documents found.</p>
         <p class="sub-message">Start by uploading a document using the form below.</p>
-        <a href="/doc/upload<?= isset($_GET['user_id']) ? '?user_id=' . $_GET['user_id'] : '' ?>" class="btn btn-primary">Upload a document</a>
+        <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn btn-primary">Upload a document</a>
       </div>
     <?php endif; ?>
   </div>
@@ -408,7 +401,7 @@ include base_path('views/partials/start.php');
       if (!categoryName.trim()) return;
       
       // Send AJAX request to add category
-      fetch('index.php?route=add_category', {
+      fetch('/?route=add_category', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -449,7 +442,7 @@ include base_path('views/partials/start.php');
       if (!categoryToDelete) return;
       
       // Send AJAX request to delete category
-      fetch('index.php?route=delete_category', {
+      fetch('/?route=delete_category', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -490,7 +483,7 @@ include base_path('views/partials/start.php');
         const categoryId = this.getAttribute('data-id');
         
         // First get the document count for this category
-        fetch('index.php?route=get_category_count', {
+        fetch('/?route=get_category_count', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -530,7 +523,7 @@ include base_path('views/partials/start.php');
     document.getElementById('userInput').value = userId;
 
     // If a category is already selected, preserve it when changing users
-    const currentCategory = "<?= isset($_GET['category']) ? $_GET['category'] : '' ?>";
+    const currentCategory = "<?= $currentCategory ?>";
     if (currentCategory) {
       document.getElementById('categoryInput').value = currentCategory;
     }
@@ -540,4 +533,4 @@ include base_path('views/partials/start.php');
   }
 </script>
 
-<?php include 'partials/end.php'; ?>
+<?php view('partials/end.php'); ?>

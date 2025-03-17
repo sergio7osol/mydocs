@@ -1,17 +1,8 @@
 <?php
-$pageTitle = 'View Document';
-include 'partials/start.php';
+view('partials/start.php', ['pageTitle' => $pageTitle ?? 'View Document']);
 
-// Get current user ID from URL or default to 1 (Sergey)
-$currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
-
-// Try to get user object from the database
-try {
-  $user = User::getById($currentUserId);
-  $userName = $user ? $user->firstname : 'User ' . $currentUserId;
-} catch (Exception $e) {
-  $userName = 'User ' . $currentUserId;
-}
+$currentUserId = $currentUserId ?? (isset($_GET['user_id']) ? $_GET['user_id'] : 1);
+$userName = $userName ?? ('User ' . $currentUserId);
 ?>
 
 <div class="container" style="padding: 1em;">
@@ -71,26 +62,6 @@ try {
           </td>
         </tr>
       </table>
-
-      <?php
-      // Convert Docker path to local path for display
-      $dockerPath = $document->file_path;
-      $localPath = str_replace('/var/www/html/', '', $dockerPath);
-
-      // For debugging
-      error_log("Original file path: " . $dockerPath);
-      error_log("Simplified path: " . $localPath);
-
-      // Get actual Windows-style absolute path for the user
-      $windowsBasePath = 'c:\\Users\\Sergey_Osokin\\IT\\Programming\\PHP\\mydocs-docs\\htdocs\\';
-      $windowsFilePath = $windowsBasePath . str_replace('/', '\\', $localPath);
-
-      // Get directory path (without the filename) - make sure to use the Windows path separator
-      $windowsDirectoryPath = substr($windowsFilePath, 0, strrpos($windowsFilePath, '\\'));
-
-      error_log("Windows absolute path for clipboard: " . $windowsFilePath);
-      error_log("Windows directory path for clipboard: " . $windowsDirectoryPath);
-      ?>
 
       <div class="document-content" style="margin-top: 1em; padding: 1em; border: 1px solid #ddd; background-color: #f9f9f9;">
         <?php if (isset($document->filename) && pathinfo($document->filename, PATHINFO_EXTENSION) === 'txt'): ?>
@@ -268,7 +239,7 @@ try {
       </div>
 
       <div style="margin-top: 2em; display: flex; gap: 10px;">
-        <a href="index.php?route=download&id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="download-button">
+        <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="download-button">
           Download Document
         </a>
 
@@ -278,7 +249,7 @@ try {
   <?php else: ?>
     <p>Document not found.</p>
   <?php endif; ?>
-  <p style="margin-top: 1em;"><a href="index.php?route=list&user_id=<?= $currentUserId ?>">Back to Document List</a></p>
+  <p style="margin-top: 1em;"><a href="/?route=list&user_id=<?= $currentUserId ?>">Back to Document List</a></p>
 </div>
 
-<?php include 'partials/end.php'; ?>
+<?php view('partials/end.php'); ?>

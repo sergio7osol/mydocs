@@ -17,6 +17,6 @@ function base_path($path) {
 }
 
 function view($path, $attributes = []) {
-  extract($attributes);
-  return require_once base_path('views/' . $path);
+    extract($attributes);
+    require_once base_path('views/' . $path);
 }

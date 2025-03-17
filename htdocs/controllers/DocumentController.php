@@ -57,10 +57,41 @@ class DocumentController {
         Category::setDatabase($this->database);
         $categories = Category::getAll();
 
-        include view('index.view.php', [
+        $pageTitle = 'Document Management System';
+
+        // Get users and their document counts for the header
+        require_once base_path('models/User.php');
+        User::setDatabase($this->database);
+        
+        try {
+            $users = User::getAll();
+            
+            // Get document counts per user
+            $userDocCounts = [];
+            foreach ($users as $user) {
+                try {
+                    $userDocCounts[$user->id] = self::countUserDocuments($user->id);
+                } catch (Exception $e) {
+                    error_log("Error getting document count for user {$user->id}: " . $e->getMessage());
+                    $userDocCounts[$user->id] = 0;
+                }
+            }
+        } catch (Exception $e) {
+            $users = [
+                new User(1, 'sergey@example.com', 'Sergey', 'Osokin'),
+                new User(2, 'galina@example.com', 'Galina', 'Treneva')
+            ];
+            $userDocCounts = [1 => 0, 2 => 0];
+        }
+
+        view('index.view.php', [
+            'pageTitle' => $pageTitle,
             'categories' => $categories,
             'documents' => $documents,
-            'currentUserId' => $currentUserId
+            'currentUserId' => $currentUserId,
+            'currentCategory' => $selectedCategory,
+            'users' => $users,
+            'userDocCounts' => $userDocCounts
         ]);
     }
     
@@ -174,7 +205,7 @@ class DocumentController {
         // For now, just ensure the user ID is valid
         if (!is_numeric($userId) || $userId <= 0) {
             error_log("Invalid user ID: " . $userId);
-            header('Location: index.php?error=invalid_user');
+            header('Location: /?error=invalid_user');
             exit;
         }
         
@@ -192,9 +223,10 @@ class DocumentController {
         Category::setDatabase($this->database);
         $categories = Category::getAll();
         
-        include view('create/index.view.php', [
+        view('create/index.view.php', [
+            'pageTitle' => 'Upload Document',
             'categories' => $categories,
-            'preselectedCategory' => $preselectedCategory
+            'preselectedCategory' => $preselectedCategory,
         ]);
     }
 
@@ -284,7 +316,7 @@ class DocumentController {
         }
         
         if (!empty($errors)) {
-            include view('create/index.view.php', [
+            view('create/index.view.php', [
                 'errors' => $errors,
                 'title' => $title,
                 'description' => $description,
@@ -299,7 +331,7 @@ class DocumentController {
         if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
             if ($uploadFile['size'] > self::MAX_FILE_SIZE) {
                 $message = "Error: The uploaded file exceeds the maximum allowed size of " . $this->formatFileSize(self::MAX_FILE_SIZE) . ".";
-                include view('create/index.view.php', [
+                view('create/index.view.php', [
                     'errors' => ['document' => $message],
                     'title' => $title,
                     'description' => $description,
@@ -354,13 +386,13 @@ class DocumentController {
                 // Create and save the document
                 $document = new Document(
                     0,                       // id
-                    $title,                  // title
-                    $description,            // description
+                    $title,                  
+                    $description,            
                     date('Y-m-d H:i:s'),     // upload_date
-                    $createdDate,            // created_date
-                    $category,               // category
-                    $targetFilePath,         // file_path
-                    $targetFileName,         // filename
+                    $createdDate,            
+                    $category,               
+                    $targetFilePath,         
+                    $targetFileName,         
                     $uploadFile['size'],     // file_size
                     $uploadFile['type'],     // file_type
                     $userId                  // user_id
@@ -369,7 +401,6 @@ class DocumentController {
                 try {
                     $document->save();
                     
-                    // Prepare document details for the success page
                     $documentDetails = [
                         'id' => $document->id,
                         'title' => $title,
@@ -385,9 +416,9 @@ class DocumentController {
                         'user_id' => $userId
                     ];
                     
-                    // Show success page with document details
-                    include view('create/success.view.php', [
-                        'documentDetails' => $documentDetails
+                    view('create/success.view.php', [
+                        'pageTitle' => 'Upload Successful',
+                        'documentDetails' => $documentDetails,
                     ]);
                     return;
                 } catch (Exception $e) {
@@ -403,7 +434,7 @@ class DocumentController {
         }
         
         // If we get here, something went wrong
-        include view('create/index.view.php', [
+        view('create/index.view.php', [
             'errors' => ['document' => $message],
             'title' => $title,
             'description' => $description,
@@ -416,24 +447,53 @@ class DocumentController {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
         
+        // Get user information
+        try {
+            $user = User::getById($userId);
+            $userName = $user ? $user->firstname : 'User ' . $userId;
+        } catch (Exception $e) {
+            $userName = 'User ' . $userId;
+        }
+        
         $document = null;
         if (!empty($id)) {
             $document = Document::getById($id, $userId);
         }
         
         if (!$document) {
-            header('Location: index.php?route=list'); // Document not found or access denied
+            header('Location: /?route=list'); // Document not found or access denied
             exit;
         }
         
-        include view('show.view.php', [
-            'document' => $document
+        // Process file path information for display
+        $dockerPath = $document->file_path;
+        $localPath = str_replace('/var/www/html/', '', $dockerPath);
+        
+        // For debugging
+        error_log("Original file path: " . $dockerPath);
+        error_log("Simplified path: " . $localPath);
+        
+        // Get actual Windows-style absolute path for the user
+        $windowsBasePath = 'c:\\Users\\Sergey_Osokin\\IT\\Programming\\PHP\\mydocs-docs\\htdocs\\';
+        $windowsFilePath = $windowsBasePath . str_replace('/', '\\', $localPath);
+        
+        // Get directory path (without the filename) - make sure to use the Windows path separator
+        $windowsDirectoryPath = substr($windowsFilePath, 0, strrpos($windowsFilePath, '\\'));
+        
+        error_log("Windows absolute path for clipboard: " . $windowsFilePath);
+        error_log("Windows directory path for clipboard: " . $windowsDirectoryPath);
+        
+        view('show.view.php', [
+            'document' => $document,
+            'pageTitle' => 'View Document: ' . $document->title,
+            'currentUserId' => $userId,
+            'userName' => $userName,
+            'localPath' => $localPath,
+            'windowsFilePath' => $windowsFilePath,
+            'windowsDirectoryPath' => $windowsDirectoryPath
         ]);
     }
 
-    /**
-     * Handle direct document downloads
-     */
     public function downloadDocument() {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
@@ -478,7 +538,7 @@ class DocumentController {
         
         // If file not found or other error
         header('HTTP/1.0 404 Not Found');
-        include view('404.view.php');
+        view('404.view.php', ['pageTitle' => '404 - Page Not Found']);
     }
     
     /**
@@ -491,7 +551,7 @@ class DocumentController {
         
         if (!$userId || !$documentId) {
             $_SESSION['error'] = 'Missing required parameters';
-            header('Location: index.php?user_id=' . $userId);
+            header('Location: /?user_id=' . $userId);
             exit;
         }
         
@@ -501,7 +561,7 @@ class DocumentController {
             
             if (!$document) {
                 $_SESSION['error'] = 'Document not found or access denied';
-                header('Location: index.php?user_id=' . $userId);
+                header('Location: /?user_id=' . $userId);
                 exit;
             }
             
@@ -521,7 +581,7 @@ class DocumentController {
         
         // Return to the document list, preserving any category filter
         $category = isset($_GET['category']) ? '&category=' . urlencode($_GET['category']) : '';
-        header('Location: index.php?user_id=' . $userId . $category);
+        header('Location: /?user_id=' . $userId . $category);
         exit;
     }
     
@@ -659,8 +719,9 @@ class DocumentController {
                     ];
                     
                     // Show success page with document details
-                    include view('create/success.view.php', [
-                        'documentDetails' => $documentDetails
+                    view('create/success.view.php', [
+                        'pageTitle' => 'Upload Successful',
+                        'documentDetails' => $documentDetails,
                     ]);
                     return;
                 } catch (Exception $e) {

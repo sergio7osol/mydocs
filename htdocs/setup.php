@@ -72,9 +72,9 @@ try {
     echo "<h2 class='success'>✅ Database setup completed successfully!</h2>";
     echo "<p>You can now:</p>
     <ul>
-        <li><a href='index.php'>Go to Document Management System</a></li>
-        <li><a href='index.php?route=upload&user_id=1'>Upload documents as Sergey</a></li>
-        <li><a href='index.php?route=upload&user_id=2'>Upload documents as Galina</a></li>
+        <li><a href='/'>Go to Document Management System</a></li>
+        <li><a href='/?route=upload&user_id=1'>Upload documents as Sergey</a></li>
+        <li><a href='/?route=upload&user_id=2'>Upload documents as Galina</a></li>
     </ul>";
     
 } catch (Exception $e) {

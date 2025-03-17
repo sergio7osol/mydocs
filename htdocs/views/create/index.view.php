@@ -1,13 +1,10 @@
 <?php
 
-$pageTitle = 'Upload Document';
-
-require_once 'views/partials/start.php';
+view('partials/start.php', ['pageTitle' => $pageTitle ?? 'Upload Document']);
 
 $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
-$preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
+$preselectedCategory = $preselectedCategory ?? (isset($_GET['category']) ? $_GET['category'] : '');
 
-// Categories are now loaded from the controller
 $categories = $categories ?? [];
 
 ?>
@@ -23,7 +20,7 @@ $categories = $categories ?? [];
     <article class="card">
       <div class="card__header">
         <h2 class="card__header-title">Upload New Document</h2>
-        <a class="upload-form__header-button" href="index.php?route=list&user_id=<?= $currentUserId ?>">Back to Document List</a>
+        <a class="upload-form__header-button" href="/?route=list&user_id=<?= $currentUserId ?>">Back to Document List</a>
       </div>
       
       <div class="card__body">
@@ -116,4 +113,4 @@ $categories = $categories ?? [];
   </div>
 </div>
 
-<?php include 'views/partials/end.php'; ?>
+<?php view('partials/end.php'); ?>

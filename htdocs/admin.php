@@ -110,7 +110,7 @@ $docCount = $documentController->countUserDocuments($userId);
             <h2>Database Maintenance</h2>
             <a href="admin.php?action=repair_categories&user_id=<?php echo $userId; ?>" class="action-button">Repair Document Categories</a>
             <a href="admin.php?action=import_documents&user_id=<?php echo $userId; ?>" class="action-button">Import New Documents</a>
-            <a href="index.php" class="action-button" style="background-color: #607D8B;">Back to Documents</a>
+            <a href="/" class="action-button" style="background-color: #607D8B;">Back to Documents</a>
         </div>
     </div>
     

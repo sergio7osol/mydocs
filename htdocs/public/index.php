@@ -1,6 +1,6 @@
 <?php
 
-// Define the base path to point directly to the htdocs directory
+// htdocs directory
 define('BASE_PATH', dirname(__DIR__) . '/');
 
 require_once BASE_PATH . 'utils.php';
@@ -17,6 +17,13 @@ header("Pragma: no-cache");
 
 // Force Docker environment for now since we're running in Docker
 putenv('DOCKER_ENV=true');
+
+spl_autoload_register(function ($class) {
+    $file = str_replace('\\', '/', $class) . '.php';
+    if (file_exists($file)) {
+        require_once $file;
+    }
+});
 
 require_once base_path('Database.php');
 require_once base_path('models/Document.php');
@@ -103,6 +110,6 @@ switch ($route) {
 		$controller->getCategoryDocumentCount();
 		break;
 	default:
-		view('404.view.php');
+		view('404.view.php', ['pageTitle' => '404 - Page Not Found']);
 		break;
 }
