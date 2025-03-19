@@ -1,4 +1,7 @@
 <?php
+
+use Core\Database;
+
 /**
  * Web-accessible script to set up the database
  * Access this via your browser at http://localhost:8080/setup.php
@@ -30,11 +33,11 @@ echo "<div class='log'>";
 try {
     // Load the configuration
     echo "Loading configuration...\n";
-    $config = require 'config.php';
+    $config = require base_path('Core/config.php');
     echo "Configuration loaded: " . json_encode($config) . "\n";
     
     // Include database class
-    require_once 'database.php';
+    require_once base_path('Core/Database.php');
     
     // Initialize database connection
     echo "Initializing database connection...\n";
@@ -43,7 +46,7 @@ try {
     
     // Read the SQL file
     echo "Reading SQL file...\n";
-    $sql = file_get_contents(__DIR__ . '/../database/create_tables.sql');
+    $sql = file_get_contents(base_path('database/create_tables.sql'));
     
     // Split the SQL into individual statements
     $statements = array_filter(

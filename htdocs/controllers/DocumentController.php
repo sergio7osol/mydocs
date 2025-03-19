@@ -1,6 +1,6 @@
 <?php
 
-require_once base_path('Validator.php');
+require_once base_path('Core/Validator.php');
 
 class DocumentController {
     const MAX_FILE_SIZE = 15728640; // 15 MB

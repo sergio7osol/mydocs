@@ -1,9 +1,10 @@
 <?php
 
-// htdocs directory
-define('BASE_PATH', dirname(__DIR__) . '/');
+use Core\Database;
 
-require_once BASE_PATH . 'utils.php';
+define('BASE_PATH', dirname(__DIR__) . '/'); // htdocs directory
+
+require_once BASE_PATH . 'Core/utils.php';
 
 include_once base_path('debug/error_log.php');
 // include('debug.php'); 
@@ -15,22 +16,21 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
-// Force Docker environment for now since we're running in Docker
-putenv('DOCKER_ENV=true');
+putenv('DOCKER_ENV=true'); // Force Docker environment for now since we're running in Docker
 
 spl_autoload_register(function ($class) {
-    $file = str_replace('\\', '/', $class) . '.php';
-    if (file_exists($file)) {
-        require_once $file;
-    }
+	$file = str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
+	if (file_exists(BASE_PATH . $file)) {
+		require base_path($file);
+	}
 });
 
-require_once base_path('Database.php');
+// require_once base_path('Core/Database.php');
 require_once base_path('models/Document.php');
 require_once base_path('models/User.php');
 
 // Initialize database connection
-$config = require base_path('config.php');
+$config = require base_path('Core/config.php');
 $db = new Database($config['database']);
 
 // Make database connection available globally

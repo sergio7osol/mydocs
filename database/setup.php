@@ -1,8 +1,16 @@
 <?php
 
+use Core\Database;
+
+// Define BASE_PATH to ensure base_path() function works
+define('BASE_PATH', dirname(__DIR__) . '/htdocs/');
+
+// Include the utils.php file for base_path function
+require_once BASE_PATH . 'Core/utils.php';
+
 // Load database configuration
-require_once __DIR__ . '/../htdocs/config.php';
-require_once __DIR__ . '/../htdocs/database.php';
+require_once base_path('Core/config.php');
+require_once base_path('Core/Database.php');
 
 // For debugging - display errors
 ini_set('display_errors', 1);
@@ -11,7 +19,7 @@ error_reporting(E_ALL);
 
 echo "Loading configuration...\n";
 // Initialize the database connection
-$config = require __DIR__ . '/../htdocs/config.php';
+$config = require base_path('Core/config.php');
 echo "Configuration loaded: " . json_encode($config) . "\n";
 
 try {

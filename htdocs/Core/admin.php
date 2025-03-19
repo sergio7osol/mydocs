@@ -1,20 +1,27 @@
 <?php
+
+use Core\Database;
+
 // Define application root path
-define('APP_ROOT', __DIR__);
+define('APP_ROOT', dirname(__DIR__));
 
 // Include essential files
-require_once APP_ROOT . '/debug/error_log.php';
-require_once APP_ROOT . '/Database.php';
-require_once APP_ROOT . '/models/Document.php';
-require_once APP_ROOT . '/controllers/DocumentController.php';
+require_once base_path('debug/error_log.php');
+require_once base_path('Core/Database.php');
+require_once base_path('models/Document.php');
+require_once base_path('controllers/DocumentController.php');
 
 // Set error display for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Initialize database connection
+$config = require base_path('Core/config.php');
+$db = new Database($config['database']);
+
 // Initialize document controller
-$documentController = new DocumentController();
+$documentController = new DocumentController($db);
 
 // Handle repair action if requested
 $message = '';
@@ -87,7 +94,7 @@ $docCount = $documentController->countUserDocuments($userId);
     </style>
 </head>
 <body>
-    <?php include APP_ROOT . '/views/partials/header.php'; ?>
+    <?php include base_path('views/partials/header.php'); ?>
     
     <div class="admin-container">
         <div class="admin-header">
@@ -114,6 +121,6 @@ $docCount = $documentController->countUserDocuments($userId);
         </div>
     </div>
     
-    <?php include APP_ROOT . '/views/partials/header.php'; ?>
+    <?php include base_path('views/partials/header.php'); ?>
 </body>
 </html>

@@ -1,10 +1,15 @@
 <?php
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
+// Define APP_ROOT if not already defined
+if (!defined('APP_ROOT')) {
+  define('APP_ROOT', dirname(__DIR__));
+}
+
 $routes = [
-  '/'        => 'controllers/index.php',
-  '/about'   => 'controllers/about.php',
-  '/contact' => 'controllers/contact.php',
+  '/'        => base_path('controllers/index.php'),
+  '/about'   => base_path('controllers/about.php'),
+  '/contact' => base_path('controllers/contact.php'),
 ];
 
 function routeToController($uri, $routes) {
@@ -19,7 +24,7 @@ function routeToController($uri, $routes) {
 
 function abort($code = 404) {
   http_response_code($code);
-  require 'views/'.$code.'.php';
+  require base_path('views/'.$code.'.php');
 
   die();
 }
