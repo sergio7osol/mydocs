@@ -1,14 +1,26 @@
 <?php
 
 use Core\Auth;
+use Core\Database;
 
 $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 
 Auth::checkPermissions($userId);
 
 require_once base_path('controllers/DocumentController.php');
+require_once base_path('models/Document.php');
 
-DocumentController::clearDocumentCache();
+// Get database connection from config
+$config = require base_path('config.php');
+$database = new Database($config['database']);
+
+// Create document controller with database connection
+$documentController = new DocumentController($database);
+
+// Set the database for Document model
+Document::setDatabase($database);
+
+$documentController->clearDocumentCache();
 
 // Get documents from database - database is the single source of truth
 try {
@@ -42,9 +54,6 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
 // Pass the correct current user ID and fetch categories
 $currentUserId = $userId;
 
-// Get database connection from globals
-$database = $GLOBALS['database'];
-
 // Load categories for the view
 require_once base_path('models/Category.php');
 Category::setDatabase($database);
@@ -63,7 +72,7 @@ try {
   $userDocCounts = [];
   foreach ($users as $user) {
     try {
-      $userDocCounts[$user->id] = DocumentController::countUserDocuments($user->id);
+      $userDocCounts[$user->id] = $documentController->countUserDocuments($user->id);
     } catch (Exception $e) {
       error_log("Error getting document count for user {$user->id}: " . $e->getMessage());
       $userDocCounts[$user->id] = 0;
