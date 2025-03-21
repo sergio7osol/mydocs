@@ -1,5 +1,6 @@
 <?php
 
+require_once base_path('Core/Auth.php');
 require_once base_path('Core/Validator.php');
 
 class DocumentController {
@@ -11,11 +12,11 @@ class DocumentController {
         $this->database = $db;
     }
 
-    public function listDocuments()
+    public function listDocuments() // V
     {
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
         
-        $this->checkPermissions($userId);
+        \Core\Auth::checkPermissions($userId);
 
         self::clearDocumentCache();
         
@@ -199,19 +200,10 @@ class DocumentController {
      * Check user permissions for accessing documents
      * 
      * @param int $userId User ID to check permissions for
-     * @return void
+     * @return bool True if user has permission, false otherwise
      */
     private function checkPermissions($userId) {
-        // For now, just ensure the user ID is valid
-        if (!is_numeric($userId) || $userId <= 0) {
-            error_log("Invalid user ID: " . $userId);
-            header('Location: /?error=invalid_user');
-            exit;
-        }
-        
-        // In the future, we could check if the current user has permission to view this user's documents
-        // For now, we're allowing all users to view all documents
-        return true;
+        return \Core\Auth::checkPermissions($userId);
     }
 
     public function showUploadForm() {
@@ -541,27 +533,34 @@ class DocumentController {
         view('404.view.php', ['pageTitle' => '404 - Page Not Found']);
     }
     
-    /**
-     * Delete a document
-     */
     public function deleteDocument() {
+        // Only allow POST requests for delete operations
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['error'] = 'Invalid request method';
+            header('Location: /');
+            exit;
+        }
+        
         // Check if the user is logged in
-        $userId = isset($_GET['user_id']) ? $_GET['user_id'] : null;
-        $documentId = isset($_GET['id']) ? $_GET['id'] : null;
+        $userId = isset($_POST['user_id']) ? $_POST['user_id'] : null;
+        $documentId = isset($_POST['id']) ? $_POST['id'] : null;
+        
+        $category = isset($_POST['category']) ? '&category=' . urlencode($_POST['category']) : '';
+        $redirectUrl = "/?user_id=$userId$category";
         
         if (!$userId || !$documentId) {
             $_SESSION['error'] = 'Missing required parameters';
-            header('Location: /?user_id=' . $userId);
+            header('Location: ' . ($userId ? $redirectUrl : '/'));
             exit;
         }
         
         try {
-            // First verify the document belongs to the user
+            // Check the document belongs to the user
             $document = Document::getById($documentId, $userId);
             
             if (!$document) {
                 $_SESSION['error'] = 'Document not found or access denied';
-                header('Location: /?user_id=' . $userId);
+                header('Location: ' . $redirectUrl);
                 exit;
             }
             
@@ -579,9 +578,8 @@ class DocumentController {
             $_SESSION['error'] = 'Error: ' . $e->getMessage();
         }
         
-        // Return to the document list, preserving any category filter
-        $category = isset($_GET['category']) ? '&category=' . urlencode($_GET['category']) : '';
-        header('Location: /?user_id=' . $userId . $category);
+        // Return to the document list
+        header('Location: ' . $redirectUrl);
         exit;
     }
     
@@ -605,6 +603,7 @@ class DocumentController {
     public static function countUserDocuments($userId) {
         try {
             // Get documents from database only
+            require_once base_path('models/Document.php');
             $docs = Document::getAll($userId);
             
             // Deduplicate by ID
@@ -699,6 +698,7 @@ class DocumentController {
                 
                 // Save to database
                 try {
+                    // If we have the full document object, create and save it
                     Document::setDatabase($this->database);
                     $document->save();
                     
