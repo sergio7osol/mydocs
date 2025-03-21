@@ -8,4 +8,3 @@ class Validator {
     return mb_strlen($value) >= $min && mb_strlen($value) <= $max;
   }
 }
-

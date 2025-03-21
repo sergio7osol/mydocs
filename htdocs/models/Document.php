@@ -283,9 +283,9 @@ class Document {
 
         $document = self::getById($id);
         
+        // Delete the physical file
         if ($document && file_exists($document->file_path)) {
-            // Delete the physical file
-            unlink($document->file_path);
+            unlink($document->file_path); 
         }
         
         // Delete from database
