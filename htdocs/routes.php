@@ -1,4 +1,4 @@
 <?php
 
 $router->get('/', 'controllers/documents/list.php');
-// $router->get('/notes', 'notes/index.php')->only('auth');
+$router->get('/show', 'controllers/documents/show.php'); 

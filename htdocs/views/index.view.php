@@ -75,7 +75,6 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
     </form>
   </div>
 
-  <!-- Messages section -->
   <?php if (isset($_SESSION['success'])): ?>
     <div class="alert alert-success">
       <?= htmlspecialchars($_SESSION['success']) ?>
@@ -94,7 +93,7 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
     <?php if (!empty($documents)): ?>
       <?php foreach ($documents as $doc): ?>
         <div class="document-item" data-id="<?= $doc['id'] ?>" data-user-id="<?= $currentUserId ?>">
-          <div class="document-item-content" onclick="window.location='/?route=view&id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
+          <div class="document-item-content" onclick="window.location='/show/?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
             <div class="document-item-title-area">
               <h3><?= htmlspecialchars($doc['title']) ?></h3>
               <?php if (!empty($doc['description'])): ?>
@@ -141,7 +140,6 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
   </div>
 </main>
 
-<!-- Category Modal -->
 <div id="category-modal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
@@ -356,7 +354,6 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
   }
 </style>
 
-<!-- Confirmation Dialog for Category Deletion -->
 <div id="confirmation-dialog" class="confirmation-dialog">
   <div class="confirmation-content">
     <h3>Delete Category</h3>

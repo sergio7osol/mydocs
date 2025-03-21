@@ -249,7 +249,7 @@ $userName = $userName ?? ('User ' . $currentUserId);
   <?php else: ?>
     <p>Document not found.</p>
   <?php endif; ?>
-  <p style="margin-top: 1em;"><a href="/?route=list&user_id=<?= $currentUserId ?>">Back to Document List</a></p>
+  <p style="margin-top: 1em;"><a href="/?user_id=<?= $currentUserId ?>">Back to Document List</a></p>
 </div>
 
 <?php view('partials/end.php'); ?>
