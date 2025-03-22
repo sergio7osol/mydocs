@@ -4,10 +4,14 @@ use Core\Database;
 
 require_once base_path('models/Document.php');
 require_once base_path('models/User.php');
+require_once base_path('controllers/DocumentController.php');
 
 // Get database connection from config
 $config = require base_path('config.php');
 $database = new Database($config['database']);
+
+// Create document controller with database connection
+$documentController = new DocumentController($database);
 
 // Set the database connection for the Document model
 Document::setDatabase($database);
@@ -51,6 +55,30 @@ $windowsDirectoryPath = substr($windowsFilePath, 0, strrpos($windowsFilePath, '\
 error_log("Windows absolute path for clipboard: " . $windowsFilePath);
 error_log("Windows directory path for clipboard: " . $windowsDirectoryPath);
 
+// Get users and their document counts for the header
+User::setDatabase($database);
+
+try {
+  $users = User::getAll();
+  
+  // Get document counts per user
+  $userDocCounts = [];
+  foreach ($users as $user) {
+    try {
+      $userDocCounts[$user->id] = $documentController->countUserDocuments($user->id);
+    } catch (Exception $e) {
+      error_log("Error getting document count for user {$user->id}: " . $e->getMessage());
+      $userDocCounts[$user->id] = 0;
+    }
+  }
+} catch (Exception $e) {
+  $users = [
+    new User(1, 'sergey@example.com', 'Sergey', 'Osokin'),
+    new User(2, 'galina@example.com', 'Galina', 'Treneva')
+  ];
+  $userDocCounts = [1 => 0, 2 => 0];
+}
+
 view('show.view.php', [
   'document' => $document,
   'pageTitle' => 'View Document: ' . $document->title,
@@ -58,5 +86,7 @@ view('show.view.php', [
   'userName' => $userName,
   'localPath' => $localPath,
   'windowsFilePath' => $windowsFilePath,
-  'windowsDirectoryPath' => $windowsDirectoryPath
+  'windowsDirectoryPath' => $windowsDirectoryPath,
+  'users' => $users,
+  'userDocCounts' => $userDocCounts
 ]);

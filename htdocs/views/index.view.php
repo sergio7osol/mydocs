@@ -1,5 +1,12 @@
 <?php
-view('partials/start.php', ['pageTitle' => $pageTitle]);
+
+view('partials/start.php', [
+    'pageTitle' => $pageTitle,
+    'users' => $users,
+    'currentUserId' => $currentUserId,
+    'currentCategory' => $currentCategory ?? null,
+    'userDocCounts' => $userDocCounts
+]);
 ?>
 
 
@@ -62,7 +69,6 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
       </div>
     <?php endif; ?>
 
-    <!-- Search form -->
     <form class="search-form" action="/" method="get">
       <input type="hidden" name="route" value="list">
       <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
@@ -71,7 +77,7 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
       <?php endif; ?>
       <input type="text" name="search" placeholder="Search documents" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
       <button type="submit" class="search-button">Search</button>
-      <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="upload-button">Upload Document</a>
+      <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="upload-button">Upload Document</a>
     </form>
   </div>
 
@@ -93,7 +99,7 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
     <?php if (!empty($documents)): ?>
       <?php foreach ($documents as $doc): ?>
         <div class="document-item" data-id="<?= $doc['id'] ?>" data-user-id="<?= $currentUserId ?>">
-          <div class="document-item-content" onclick="window.location='/show/?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
+          <div class="document-item-content" onclick="window.location='/document/show/?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
             <div class="document-item-title-area">
               <h3><?= htmlspecialchars($doc['title']) ?></h3>
               <?php if (!empty($doc['description'])): ?>
@@ -118,7 +124,7 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
 
       <?php if (isset($currentCategory)): ?>
         <div class="category-upload-button-container">
-          <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?><?= isset($currentCategory) ? '&category=' . htmlspecialchars($currentCategory) : '' ?>" class="btn btn-primary">Upload to this category</a>
+          <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?><?= isset($currentCategory) ? '&category=' . htmlspecialchars($currentCategory) : '' ?>" class="btn btn-primary">Upload to this category</a>
         </div>
       <?php endif; ?>
 
@@ -127,14 +133,14 @@ view('partials/start.php', ['pageTitle' => $pageTitle]);
         📄
         <p>No documents found in category "<?= htmlspecialchars($currentCategory) ?>".</p>
         <p class="sub-message">Upload a document to this category to see it here.</p>
-        <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>&category=<?= htmlspecialchars($currentCategory) ?>" class="btn btn-primary">Upload to this category</a>
+        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>&category=<?= htmlspecialchars($currentCategory) ?>" class="btn btn-primary">Upload to this category</a>
       </div>
     <?php else: ?>
       <div class="empty-state">
         📄
         <p>No documents found.</p>
         <p class="sub-message">Start by uploading a document using the form below.</p>
-        <a href="/doc/upload<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn btn-primary">Upload a document</a>
+        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn btn-primary">Upload a document</a>
       </div>
     <?php endif; ?>
   </div>

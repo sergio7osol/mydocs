@@ -1,8 +1,14 @@
 <?php
-view('partials/start.php', ['pageTitle' => $pageTitle ?? 'View Document']);
-
 $currentUserId = $currentUserId ?? (isset($_GET['user_id']) ? $_GET['user_id'] : 1);
 $userName = $userName ?? ('User ' . $currentUserId);
+
+view('partials/start.php', [
+    'pageTitle' => $pageTitle ?? 'View Document',
+    'users' => $users,
+    'currentUserId' => $currentUserId,
+    'currentCategory' => $currentCategory ?? null,
+    'userDocCounts' => $userDocCounts
+]);
 ?>
 
 <div class="container" style="padding: 1em;">

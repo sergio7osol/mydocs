@@ -11,6 +11,11 @@
 
 <body>
 	<div class="main-container">
-		<?php view('partials/header.php') ?>
+		<?php view('partials/header.php', [
+			'users' => $users ?? [],
+			'currentUserId' => $currentUserId ?? null,
+			'currentCategory' => $currentCategory ?? null,
+			'userDocCounts' => $userDocCounts ?? []
+		]) ?>
 
 		<main class="main-content">

@@ -206,7 +206,8 @@ class DocumentController {
         return \Core\Auth::checkPermissions($userId);
     }
 
-    public function showUploadForm() {
+    public function showUploadForm() // V
+    {
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
         $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : ''; // Get category from URL if available
         
@@ -222,7 +223,8 @@ class DocumentController {
         ]);
     }
 
-    public function uploadDocument() {
+    public function uploadDocument() // V
+    {
         $title = isset($_POST['title']) ? $_POST['title'] : '';
         $description = isset($_POST['description']) ? $_POST['description'] : '';
         $category = isset($_POST['category']) ? trim($_POST['category']) : 'Personal';
@@ -273,7 +275,7 @@ class DocumentController {
             $user = User::getDefault(); // Fallback to default user
             $userId = $user->id;
         }
-        
+           
         // Validate category exists in database
         require_once base_path('models/Category.php');
         Category::setDatabase($this->database);
@@ -435,7 +437,8 @@ class DocumentController {
         ]);
     }
 
-    public function viewDocument() {
+    public function viewDocument() // V
+    {
         $id = isset($_GET['id']) ? $_GET['id'] : null;
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // Default to user ID 1 (Sergey)
         
@@ -475,6 +478,31 @@ class DocumentController {
         error_log("Windows absolute path for clipboard: " . $windowsFilePath);
         error_log("Windows directory path for clipboard: " . $windowsDirectoryPath);
         
+        // Get users and their document counts for the header, just like in listDocuments method
+        require_once base_path('models/User.php');
+        User::setDatabase($this->database);
+        
+        try {
+            $users = User::getAll();
+            
+            // Get document counts per user
+            $userDocCounts = [];
+            foreach ($users as $user) {
+                try {
+                    $userDocCounts[$user->id] = self::countUserDocuments($user->id);
+                } catch (Exception $e) {
+                    error_log("Error getting document count for user {$user->id}: " . $e->getMessage());
+                    $userDocCounts[$user->id] = 0;
+                }
+            }
+        } catch (Exception $e) {
+            $users = [
+                new User(1, 'sergey@example.com', 'Sergey', 'Osokin'),
+                new User(2, 'galina@example.com', 'Galina', 'Treneva')
+            ];
+            $userDocCounts = [1 => 0, 2 => 0];
+        }
+        
         view('show.view.php', [
             'document' => $document,
             'pageTitle' => 'View Document: ' . $document->title,
@@ -482,7 +510,9 @@ class DocumentController {
             'userName' => $userName,
             'localPath' => $localPath,
             'windowsFilePath' => $windowsFilePath,
-            'windowsDirectoryPath' => $windowsDirectoryPath
+            'windowsDirectoryPath' => $windowsDirectoryPath,
+            'users' => $users,
+            'userDocCounts' => $userDocCounts
         ]);
     }
 

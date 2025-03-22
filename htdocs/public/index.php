@@ -80,10 +80,7 @@ $router->route($uri, $method);
 
 // switch ($route) {
 // 	case 'list':
-// 		require_once base_path('controllers/DocumentController.php');
-// 		$controller = new DocumentController($db);
 // 		$controller->listDocuments();
-// 		break;
 // 	case 'upload':
 // 		require_once base_path('controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);
@@ -95,10 +92,7 @@ $router->route($uri, $method);
 // 		$controller->uploadDocument();
 // 		break;
 // 	case 'view':
-// 		require_once base_path('controllers/DocumentController.php');
-// 		$controller = new DocumentController($db);
 // 		$controller->viewDocument();
-// 		break;
 // 	case 'download':
 // 		require_once base_path('controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);

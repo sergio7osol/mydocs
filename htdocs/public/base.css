@@ -20,19 +20,17 @@ body, *:not(path), *::before, *::after {
 }
 
 .main-header {
-    padding: 0.5em;
-    background-color: #333;
+    padding: 1em;
+    background-color: #4CAF50;
     color: #fff;
-    text-align: center;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
 .main-header h1 {
-    font-size: 1.2em;
+    font-size: 1.8em;
     margin: 0;
-    padding: 0.2em;
 }
 
 .main-header h1 a {
@@ -44,6 +42,12 @@ body, *:not(path), *::before, *::after {
     text-decoration: underline;
 }
 
+.user-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 .user-button {
     text-decoration: none;
     padding: .45rem 1rem;
@@ -51,6 +55,27 @@ body, *:not(path), *::before, *::after {
     display: flex;
     align-items: center;
     gap: 8px;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.user-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.user-selector div.active .user-button {
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 3px 5px rgba(150, 150, 150, 0.2);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.02em;
+    transform: translateY(-2px);
+    position: relative;
+    z-index: 1;
+}
+
+.user-selector div.active .user-button::after {
+    display: none;
 }
 
 .user-button__icon {
@@ -62,6 +87,10 @@ body, *:not(path), *::before, *::after {
     align-items: center;
     justify-content: center;
     font-size: 1.2em;
+}
+
+.user-selector div.active .user-button__icon {
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 .container {
@@ -163,27 +192,6 @@ body, *:not(path), *::before, *::after {
 .search-bar a button[type="button"]:hover {
     background-color: #218838;
     box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-}
-
-.user-selector {
-    display: flex;
-    align-items: center;
-    margin-right: 1em;
-}
-
-.user-selector label {
-    margin-left: 0.5em;
-    cursor: pointer;
-    padding: 0.2em 0.5em;
-    border-radius: 3px;
-}
-
-.user-selector input[type="radio"] {
-    cursor: pointer;
-}
-
-.user-selector input[type="radio"]:checked + label {
-    background-color: #4a6da7;
 }
 
 .document-list {
