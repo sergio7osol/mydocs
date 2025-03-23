@@ -34,9 +34,6 @@ require_once base_path('models/User.php');
 $config = require base_path('config.php');
 $db = new Database($config['database']);
 
-// Make database connection available globally
-$GLOBALS['database'] = $db;
-
 // Set the database connection for the models
 Document::setDatabase($db);
 User::setDatabase($db);
@@ -51,7 +48,7 @@ file_put_contents(
 	FILE_APPEND
 );
 
-$router = new Router();
+$router = new Router($db);
 
 $routes = require base_path('routes.php');
 

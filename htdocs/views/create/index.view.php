@@ -1,7 +1,14 @@
 <?php
 
-view('partials/start.php', ['pageTitle' => $pageTitle ?? 'Upload Document']);
+view('partials/start.php', [
+    'pageTitle' => $pageTitle ?? 'Upload Document',
+    'users' => $users ?? [],
+    'currentUserId' => $currentUserId ?? (isset($_GET['user_id']) ? $_GET['user_id'] : 1),
+    'userDocCounts' => $userDocCounts ?? [],
+    'currentCategory' => $preselectedCategory ?? ''
+]);
 
+// These local variables only needed for the form below
 $currentUserId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 $preselectedCategory = $preselectedCategory ?? (isset($_GET['category']) ? $_GET['category'] : '');
 
@@ -24,10 +31,12 @@ $categories = $categories ?? [];
       </div>
       
       <div class="card__body">
-        <form class="upload-form" action="/doc/upload?user_id=<?= $currentUserId ?>" method="POST" enctype="multipart/form-data">
+        <form class="upload-form" action="/document/create" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
+          
           <div class="upload-form__line">
             <label for="title" class="upload-form__line-title">Document Title:</label>
-            <input type="text" name="title" id="title" class="upload-form__line-input <?= isset($errors['title']) ? 'is-invalid' : '' ?>" required maxlength="70" value="<?= htmlspecialchars($_POST['title'] ?? '') ?>">
+            <input type="text" name="title" id="title" class="upload-form__line-input <?= isset($errors['title']) ? 'is-invalid' : '' ?>" required maxlength="70" value="<?= htmlspecialchars($title ?? '') ?>">
             <?php if (isset($errors['title'])) : ?>
             <div class="error-message">
               <?= htmlspecialchars($errors['title']) ?>
@@ -35,7 +44,7 @@ $categories = $categories ?? [];
             <?php endif; ?>
             <small class="upload-form__line-clarification">The title of the document being uploaded.</small>
           </div>
-          
+
           <div id="PPP" class="upload-form__line upload-form__line--file">
             <label for="document" class="upload-form__line-title">Select document to upload:</label>
             <div class="upload-form__line-input">
@@ -44,7 +53,7 @@ $categories = $categories ?? [];
               <div class="error-message">
                 <?= htmlspecialchars($errors['document']) ?>
               </div>
-              <?php endif; ?>
+            <?php endif; ?>
               <div class="upload-form__line-formats">
                 <span class="upload-form__line-format">PDF</span>
                 <span class="upload-form__line-format">DOC</span>
@@ -55,7 +64,7 @@ $categories = $categories ?? [];
             </div>
             <small class="upload-form__line-clarification">Upload a document in PDF, DOC, DOCX, or TXT format (max 15MB).</small>
           </div>
-          
+
           <div class="upload-form__line upload-form__line--select">
             <label for="category" class="upload-form__line-title">Category:</label>
             <select name="category" id="category" required class="upload-form__line-input <?= isset($errors['category']) ? 'is-invalid' : '' ?>">
@@ -72,7 +81,7 @@ $categories = $categories ?? [];
             </div>
             <?php endif; ?>
           </div>
-          
+
           <div class="upload-form__line">
             <label for="created_date" class="upload-form__line-title">Created at (optional):</label>
             <input type="date" name="created_date" id="created_date" class="upload-form__line-input <?= isset($errors['created_date']) ? 'is-invalid' : '' ?>" value="<?= htmlspecialchars($_POST['created_date'] ?? '') ?>">
@@ -83,7 +92,7 @@ $categories = $categories ?? [];
             <?php endif; ?>
             <small class="upload-form__line-clarification">The date when this document was originally created (not when you're uploading it)</small>
           </div>
-          
+
           <div class="upload-form__line upload-form__line--textarea">
             <label for="description" class="upload-form__line-title">Description (optional):</label>
             <textarea name="description" id="description" class="upload-form__line-input <?= isset($errors['description']) ? 'is-invalid' : '' ?>" maxlength="300"><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
@@ -94,7 +103,7 @@ $categories = $categories ?? [];
             <?php endif; ?>
             <small class="upload-form__line-clarification">Brief description of the document (maximum 300 characters)</small>
           </div>
-          
+
           <div class="upload-form__line upload-form__line--hidden">
             <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
             <?php if (isset($errors['user_id'])) : ?>
