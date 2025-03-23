@@ -99,7 +99,7 @@ view('partials/start.php', [
     <?php if (!empty($documents)): ?>
       <?php foreach ($documents as $doc): ?>
         <div class="document-item" data-id="<?= $doc['id'] ?>" data-user-id="<?= $currentUserId ?>">
-          <div class="document-item-content" onclick="window.location='/document/show/?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
+          <div class="document-item-content" onclick="window.location='/document/?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
             <div class="document-item-title-area">
               <h3><?= htmlspecialchars($doc['title']) ?></h3>
               <?php if (!empty($doc['description'])): ?>
@@ -108,9 +108,8 @@ view('partials/start.php', [
             </div>
             <span class="document-date"><span class="light-text">Created on:</span> <?= htmlspecialchars(!empty($doc['created_date']) ? $doc['created_date'] : $doc['upload_date']) ?></span>
             <span class="document-category"><?= htmlspecialchars($doc['category']) ?></span>
-            <form method="POST" action="/" class="document-item__delete-form" onsubmit="return confirm('Are you sure you want to delete this document?');">
+            <form method="POST" action="/document" class="document-item__delete-form" onsubmit="return confirm('Are you sure you want to delete this document?');">
               <input type="hidden" name="_method" value="DELETE">
-              <input type="hidden" name="route" value="delete">
               <input type="hidden" name="id" value="<?= $doc['id'] ?>">
               <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
               <?php if (isset($currentCategory)): ?>
