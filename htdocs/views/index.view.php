@@ -108,14 +108,14 @@ view('partials/start.php', [
             </div>
             <span class="document-date"><span class="light-text">Created on:</span> <?= htmlspecialchars(!empty($doc['created_date']) ? $doc['created_date'] : $doc['upload_date']) ?></span>
             <span class="document-category"><?= htmlspecialchars($doc['category']) ?></span>
-            <form method="POST" action="/document" class="document-item__delete-form" onsubmit="return confirm('Are you sure you want to delete this document?');">
+            <form method="POST" action="/document" class="document-item__delete-form" onsubmit="return confirm('Are you sure you want to delete this document?');" onclick="event.stopPropagation();">
               <input type="hidden" name="_method" value="DELETE">
               <input type="hidden" name="id" value="<?= $doc['id'] ?>">
               <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
               <?php if (isset($currentCategory)): ?>
                 <input type="hidden" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
               <?php endif; ?>
-              <button type="submit" class="document-item__del-icon" title="Delete document">🗑️</button>
+              <button type="submit" class="document-item__del-icon" title="Delete document" onclick="event.stopPropagation();">🗑️</button>
             </form>
           </div>
         </div>
