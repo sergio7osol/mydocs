@@ -25,6 +25,8 @@ spl_autoload_register(function ($class) {
 	}
 });
 
+require_once base_path('bootstrap.php');
+
 // require_once base_path('Core/Database.php');
 // require_once base_path('Core/Router.php');
 require_once base_path('models/Document.php');

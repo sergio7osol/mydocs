@@ -1,7 +1,8 @@
 <?php
 
-use Core\Auth;
+use Core\App;
 use Core\Database;
+use Core\Auth;
 
 error_log("Document deletion - Starting deletion process");
 
@@ -41,8 +42,7 @@ try {
 // Set up database connection
 try {
     error_log("Document deletion - Setting up database connection");
-    $config = require base_path('config.php');
-    $database = new Database($config['database']);
+    $database = App::resolve(Database::class);
     
     // Load Document model
     require_once base_path('models/Document.php');
