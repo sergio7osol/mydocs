@@ -11,29 +11,28 @@ view('partials/start.php', [
 ]);
 ?>
 
-<div class="container" style="padding: 1em;">
+<div class="document-view">
   <?php if (isset($document) && $document): ?>
-    <div class="document-details">
-      <h2><?= htmlspecialchars($document->title); ?></h2>
-
-      <table style="border-collapse: separate; border-spacing: 0 18px; margin-bottom: 15px; width: auto;">
+    <div class="document-view__details">
+      <h3 class="document-view__subtitle"><?= htmlspecialchars($document->title); ?></h3>
+      <table class="document-view__table">
         <?php if (!empty($document->created_date)): ?>
-          <tr style="margin-bottom: 12px;">
-            <td style="padding-right: 15px; color: #555; vertical-align: middle;">Created at:</td>
-            <td>
-              <span style="display: inline-block; background-color: transparent; border-bottom: 2px solid #2196f3; color: #0d47a1; font-weight: 600; padding: 4px 2px;"><?= htmlspecialchars($document->getFormattedCreatedDate()); ?></span>
+          <tr class="document-view__row">
+            <td class="document-view__label">Created at:</td>
+            <td class="document-view__value">
+              <span class="document-view__date"><?= htmlspecialchars($document->getFormattedCreatedDate()); ?></span>
             </td>
           </tr>
         <?php endif; ?>
-        <tr style="margin-bottom: 12px;">
-          <td style="padding-right: 15px; color: #555;">Uploaded at:</td>
-          <td>
+        <tr class="document-view__row">
+          <td class="document-view__label">Uploaded at:</td>
+          <td class="document-view__value">
             <?php
             $formattedUploadDate = htmlspecialchars($document->getFormattedUploadDate());
             // Split the date and time parts based on the dash separator
             $dateParts = explode(' - ', $formattedUploadDate);
             if (count($dateParts) > 1) {
-              echo $dateParts[0] . ' <span style="font-size: 85%; color: #777;">- ' . $dateParts[1] . '</span>';
+              echo $dateParts[0] . ' <span class="document-view__time">' . $dateParts[1] . '</span>';
             } else {
               echo $formattedUploadDate;
             }
@@ -41,22 +40,24 @@ view('partials/start.php', [
           </td>
         </tr>
         <?php if (!empty($document->description)): ?>
-          <tr style="margin-bottom: 12px;">
-            <td style="padding-right: 15px; color: #555; vertical-align: top; padding-top: 8px;">Description:</td>
-            <td>
-              <div style="border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; line-height: 1.4; max-width: 500px; display: inline-block;">
+          <tr class="document-view__row">
+            <td class="document-view__label">Description:</td>
+            <td class="document-view__value">
+              <div class="document-view__description">
                 <?= nl2br(htmlspecialchars($document->description)); ?>
               </div>
             </td>
           </tr>
         <?php endif; ?>
-        <tr style="margin-bottom: 12px;">
-          <td style="padding-right: 15px; color: #555;">Category:</td>
-          <td><span style="display: inline-block; background-color: #e3f2fd; color: #0d47a1; border-radius: 16px; padding: 3px 10px; font-size: 90%;"><?= htmlspecialchars($document->category); ?></span></td>
+        <tr class="document-view__row">
+          <td class="document-view__label">Category:</td>
+          <td class="document-view__value">
+            <span class="document-view__category"><?= htmlspecialchars($document->category); ?></span>
+          </td>
         </tr>
-        <tr>
-          <td style="padding-right: 15px; color: #555;">Owner:</td>
-          <td>
+        <tr class="document-view__row">
+          <td class="document-view__label">Owner:</td>
+          <td class="document-view__value">
             <?php
             try {
               $owner = User::getById($document->user_id);
@@ -68,15 +69,17 @@ view('partials/start.php', [
           </td>
         </tr>
       </table>
+    </div>
 
-      <div class="document-content" style="margin-top: 1em; padding: 1em; border: 1px solid #ddd; background-color: #f9f9f9;">
-        <?php if (isset($document->filename) && pathinfo($document->filename, PATHINFO_EXTENSION) === 'txt'): ?>
-          <h3>Document Content:</h3>
-          <pre style="white-space: pre-wrap;"><?= htmlspecialchars(file_get_contents($localPath)); ?></pre>
-        <?php else: ?>
-          <p style="display: flex; align-items: center;">
+    <div class="document-view__content">
+      <?php if (isset($document->filename) && pathinfo($document->filename, PATHINFO_EXTENSION) === 'txt'): ?>
+        <h3 class="document-view__subtitle">Document Content:</h3>
+        <pre class="document-view__text-content"><?= htmlspecialchars(file_get_contents($localPath)); ?></pre>
+      <?php else: ?>
+        <div class="document-view__file-info">
+          <p class="document-view__file-path">
             <strong>File Path:</strong>
-            <span class="path-container" style="margin-left: .5rem;">
+            <span class="path-container">
               <code id="filePath"
                 class="copyable-path"
                 data-path="<?= htmlspecialchars($windowsFilePath); ?>"
@@ -95,167 +98,103 @@ view('partials/start.php', [
           </div>
           </span>
           <span id="copyMessage" style="display: none; color: green; margin-left: 10px; font-size: 0.9em;">Copied to clipboard!</span>
+        </div>
 
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const copyFileBtn = document.getElementById('copyFileBtn');
+            const copyDirBtn = document.getElementById('copyDirBtn');
+            const pathElement = document.getElementById('filePath');
+            const message = document.getElementById('copyMessage');
 
-          <style>
-            .path-container {
-              display: flex;
-              align-items: flex-start;
-              gap: 10px;
-              flex-wrap: wrap;
-            }
+            // Debug log the data attributes
+            console.log('File path data attribute:', pathElement.getAttribute('data-path'));
+            console.log('Folder path data attribute:', pathElement.getAttribute('data-dir-path'));
 
-            .button-group {
-              display: flex;
-              gap: .5rem;
-              height: 3rem;
-              justify-content: space-between;
-              align-items: stretch;
-            }
+            // Function to copy text to clipboard
+            function copyToClipboard(text, successMessage) {
+              // Log to console for debugging
+              console.log('Attempting to copy:', text);
 
-            .copyable-path {
-              background-color: #f5f5f5;
-              padding: 3px 6px;
-              border: 1px solid #e1e1e1;
-              border-radius: 3px;
-              font-family: monospace;
-              word-break: break-all;
-              transition: all 0.2s ease-in-out;
-              display: inline-block;
-            }
+              // Use the modern clipboard API
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText(text)
+                  .then(() => {
+                    console.log('Successfully copied to clipboard');
+                    showCopyMessage(successMessage);
+                  })
+                  .catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Could not copy to clipboard. Your browser might be blocking this feature.');
+                  });
+              } else {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = 0;
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
 
-            .copyable-path:hover {
-              background-color: #e9f5ff;
-              border-color: #7fb5ff;
-            }
-
-            .copy-button {
-              background-color: #e6e6e6;
-              border: 1px solid #ccc;
-              border-radius: 3px;
-              padding: 4px 8px;
-              cursor: pointer;
-              font-size: 0.85em;
-              transition: all 0.2s ease;
-              white-space: nowrap;
-            }
-
-            .copy-button:hover {
-              background-color: #d4d4d4;
-            }
-
-            .copy-button:active {
-              background-color: #c4c4c4;
-              transform: translateY(1px);
-            }
-          </style>
-
-          <script>
-            document.addEventListener('DOMContentLoaded', function() {
-              const copyFileBtn = document.getElementById('copyFileBtn');
-              const copyDirBtn = document.getElementById('copyDirBtn');
-              const pathElement = document.getElementById('filePath');
-              const message = document.getElementById('copyMessage');
-
-              // Debug log the data attributes
-              console.log('File path data attribute:', pathElement.getAttribute('data-path'));
-              console.log('Folder path data attribute:', pathElement.getAttribute('data-dir-path'));
-
-              // Function to copy text to clipboard
-              function copyToClipboard(text, successMessage) {
-                // Log to console for debugging
-                console.log('Attempting to copy:', text);
-
-                // Use the modern clipboard API
-                if (navigator.clipboard) {
-                  navigator.clipboard.writeText(text)
-                    .then(() => {
-                      console.log('Successfully copied to clipboard');
-                      showCopyMessage(successMessage);
-                    })
-                    .catch(err => {
-                      console.error('Failed to copy text: ', err);
-                      alert('Could not copy to clipboard. Your browser might be blocking this feature.');
-                    });
-                } else {
-                  // Fallback for older browsers
-                  const textarea = document.createElement('textarea');
-                  textarea.value = text;
-                  textarea.style.position = 'fixed';
-                  textarea.style.opacity = 0;
-                  document.body.appendChild(textarea);
-                  textarea.focus();
-                  textarea.select();
-
-                  try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                      console.log('Fallback copy successful');
-                      showCopyMessage(successMessage);
-                    } else {
-                      console.error('Fallback copy failed');
-                      alert('Could not copy to clipboard');
-                    }
-                  } catch (err) {
-                    console.error('Fallback copy error: ', err);
+                try {
+                  const successful = document.execCommand('copy');
+                  if (successful) {
+                    console.log('Fallback copy successful');
+                    showCopyMessage(successMessage);
+                  } else {
+                    console.error('Fallback copy failed');
                     alert('Could not copy to clipboard');
                   }
-
-                  document.body.removeChild(textarea);
+                } catch (err) {
+                  console.error('Fallback copy error: ', err);
+                  alert('Could not copy to clipboard');
                 }
+                
+                document.body.removeChild(textarea);
               }
+            }
 
-              // Add click event for file path button
-              if (copyFileBtn) {
-                copyFileBtn.addEventListener('click', function(e) {
-                  e.preventDefault();
-                  const textToCopy = pathElement.getAttribute('data-path');
-                  copyToClipboard(textToCopy, 'Copied file path to clipboard!');
-                });
-              }
+            // Show copy message
+            function showCopyMessage(successMsg) {
+              message.textContent = successMsg || 'Copied to clipboard!';
+              message.style.display = 'inline-block';
+              setTimeout(() => {
+                message.style.display = 'none';
+              }, 2000);
+            }
 
-              // Add click event for directory path button
-              if (copyDirBtn) {
-                copyDirBtn.addEventListener('click', function(e) {
-                  e.preventDefault();
-                  // For debugging, log the exact value being attempted to copy
-                  const dirPath = pathElement.getAttribute('data-dir-path');
-                  console.log('Directory path before copy attempt:', dirPath);
-
-                  if (!dirPath) {
-                    console.error('Directory path is empty or undefined!');
-                    alert('Error: Could not find directory path to copy');
-                    return;
-                  }
-
-                  copyToClipboard(dirPath, 'Copied folder path to clipboard!');
-                });
-              }
-
-              function showCopyMessage(text) {
-                message.textContent = text || 'Copied to clipboard!';
-                message.style.display = 'inline';
-                setTimeout(function() {
-                  message.style.display = 'none';
-                }, 2000);
-              }
+            // Event listeners for copy buttons
+            copyFileBtn.addEventListener('click', function() {
+              const filePath = pathElement.getAttribute('data-path');
+              copyToClipboard(filePath, 'File path copied to clipboard!');
             });
-          </script>
-        <?php endif; ?>
-      </div>
 
-      <div style="margin-top: 2em; display: flex; gap: 10px;">
-        <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="download-button">
-          Download Document
-        </a>
-
-        <?php /* "Open in Explorer" button removed as it doesn't work with Docker */ ?>
-      </div>
+            copyDirBtn.addEventListener('click', function() {
+              const dirPath = pathElement.getAttribute('data-dir-path');
+              copyToClipboard(dirPath, 'Folder path copied to clipboard!');
+            });
+          });
+        </script>
+      <?php endif; ?>
     </div>
+
+    <section class="document-actions">
+      <a href="/document/edit?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="document-actions__button document-actions__button--edit">
+        <span class="document-actions__icon document-actions__icon--edit">✏️</span>
+        <span class="document-actions__text">Edit Document</span>
+      </a>
+      <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="document-actions__button document-actions__button--download">
+        <span class="document-actions__icon document-actions__icon--download">📥</span>
+        <span class="document-actions__text">Download Document</span>
+      </a>
+    </section>
   <?php else: ?>
-    <p>Document not found.</p>
+    <p class="document-view__not-found">Document not found.</p>
   <?php endif; ?>
-  <p style="margin-top: 1em;"><a href="/?user_id=<?= $currentUserId ?>">Back to Document List</a></p>
+  <div class="document-view__back">
+    <a href="/?user_id=<?= $currentUserId ?>" class="document-view__back-link-simple">Back to Document List</a>
+  </div>
 </div>
 
 <?php view('partials/end.php'); ?>
