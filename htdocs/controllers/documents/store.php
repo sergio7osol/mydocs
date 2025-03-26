@@ -1,5 +1,6 @@
 <?php
 
+use Core\App;
 use Core\Auth;
 use Core\Validator;
 use Core\Database;
@@ -13,9 +14,7 @@ require_once base_path('models/Document.php');
 require_once base_path('models/User.php');
 require_once base_path('models/Category.php');
 
-// Get database connection from config
-$config = require base_path('config.php');
-$database = new Database($config['database']);
+$database = App::resolve(Database::class);
 
 // Create document controller with database connection
 $documentController = new DocumentController($database);
