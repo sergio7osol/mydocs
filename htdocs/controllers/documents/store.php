@@ -24,6 +24,10 @@ Document::setDatabase($database);
 User::setDatabase($database);
 Category::setDatabase($database);
 
+// Check if this is an update or a new document
+$documentId = isset($_POST['id']) ? $_POST['id'] : (isset($_GET['id']) ? $_GET['id'] : null);
+$isUpdate = !empty($documentId);
+
 define('MAX_FILE_SIZE', 15 * 1024 * 1024); // 15MB
 
 $title = isset($_POST['title']) ? $_POST['title'] : '';
@@ -231,21 +235,45 @@ if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
     
     if (move_uploaded_file($uploadFile['tmp_name'], $targetFilePath)) {
         // Create and save the document
-        $document = new Document(
-            0,                       // id
-            $title,                  
-            $description,            
-            date('Y-m-d H:i:s'),     // upload_date
-            $createdDate,            
-            $category,               
-            $targetFilePath,         
-            $targetFileName,         
-            $uploadFile['size'],     // file_size
-            $uploadFile['type'],     // file_type
-            $userId                  // user_id
-        );
-        
         try {
+            // Create new or update existing document
+            if ($isUpdate) {
+                // Load existing document
+                $document = Document::getById($documentId);
+                if (!$document || $document->user_id != $userId) {
+                    throw new Exception("Document not found or you don't have permission to edit it");
+                }
+                
+                // Update document properties
+                $document->title = $title;
+                $document->description = $description;
+                $document->created_date = $createdDate;
+                $document->category = $category;
+                
+                // Only update file properties if a new file was uploaded
+                if ($uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
+                    $document->file_path = $targetFilePath;
+                    $document->filename = $targetFileName;
+                    $document->file_size = $uploadFile['size'];
+                    $document->file_type = $uploadFile['type'];
+                }
+            } else {
+                // Create a new document
+                $document = new Document(
+                    0,                       // id
+                    $title,                  
+                    $description,            
+                    date('Y-m-d H:i:s'),     // upload_date
+                    $createdDate,            
+                    $category,               
+                    $targetFilePath,         
+                    $targetFileName,         
+                    $uploadFile['size'],     // file_size
+                    $uploadFile['type'],     // file_type
+                    $userId                  // user_id
+                );
+            }
+            
             $document->save();
             
             $documentDetails = [

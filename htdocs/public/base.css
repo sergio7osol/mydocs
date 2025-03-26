@@ -818,6 +818,7 @@ body, *:not(path), *::before, *::after {
   color: #4a6da7;
   border: none;
   padding: 8px 15px;
+  margin-left: 3rem;
   border-radius: 4px;
   font-weight: bold;
   text-decoration: none;
@@ -864,6 +865,15 @@ body, *:not(path), *::before, *::after {
 	padding: 3px 6px;
 	border-radius: 3px;
 	color: #666;
+}
+
+.upload-form__static-value {
+    padding: 8px 12px;
+    background-color: var(--color-gray-100);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-gray-800);
+    font-style: italic;
 }
 
 /* Error message styling for form validation */
@@ -953,6 +963,10 @@ body, *:not(path), *::before, *::after {
 }
 
 /* Button specific styles */
+.upload-form__line--button {
+    margin-bottom: 0;
+}
+
 .upload-form__line--button .upload-form__line-button {
 	background-color: #28a745;
 	color: white;
@@ -1428,4 +1442,29 @@ body, *:not(path), *::before, *::after {
 .copy-button:active {
     background-color: #c4c4c4;
     transform: translateY(1px);
+}
+
+.current-file-info {
+    text-align: left;
+    font-size: .9rem;
+    margin-top: 8px;
+    padding: 8px;
+    background-color: var(--color-gray-100);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius-sm);
+}
+
+.current-file-info p {
+    margin: 0 0 4px 0;
+    color: var(--color-gray-800);
+}
+
+.current-file-info small {
+    color: var(--color-gray-600);
+    font-style: italic;
+}
+
+/* Media queries for responsiveness */
+@media screen and (max-width: 768px) {
+    /* Add styles for smaller screens */
 }
