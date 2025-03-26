@@ -74,7 +74,17 @@ view('partials/start.php', [
     <div class="document-view__content">
       <?php if (isset($document->filename) && pathinfo($document->filename, PATHINFO_EXTENSION) === 'txt'): ?>
         <h3 class="document-view__subtitle">Document Content:</h3>
-        <pre class="document-view__text-content"><?= htmlspecialchars(file_get_contents($localPath)); ?></pre>
+        <?php 
+          $absolutePath = getenv('DOCKER_ENV') === 'true' 
+            ? $document->file_path 
+            : base_path($localPath);
+          
+          if (file_exists($absolutePath)) {
+            echo '<pre class="document-view__text-content">' . htmlspecialchars(file_get_contents($absolutePath)) . '</pre>';
+          } else {
+            echo '<div class="document-view__error">Unable to display file content. The file may have been moved or deleted.</div>';
+          }
+        ?>
       <?php else: ?>
         <div class="document-view__file-info">
           <p class="document-view__file-path">
