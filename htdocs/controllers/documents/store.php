@@ -98,16 +98,21 @@ if (!empty($description) && mb_strlen($description) > 300) {
 
 // Validate file upload
 $uploadFile = isset($_FILES['document']) ? $_FILES['document'] : null;
-if (!$uploadFile || !isset($uploadFile['tmp_name']) || empty($uploadFile['tmp_name'])) {
+$hasNewFileUploaded = $uploadFile && isset($uploadFile['tmp_name']) && !empty($uploadFile['tmp_name']) && $uploadFile['error'] === UPLOAD_ERR_OK;
+
+// For edit mode, we may not have a new file upload but have existing file data
+$hasExistingFile = $isUpdate && isset($_POST['existing_file_path']) && !empty($_POST['existing_file_path']);
+
+if (!$hasNewFileUploaded && !$hasExistingFile) {
     $errors['document'] = "Please select a document to upload";
-} elseif ($uploadFile['error'] !== UPLOAD_ERR_OK) {
+} elseif ($uploadFile && $uploadFile['error'] !== UPLOAD_ERR_OK && $uploadFile['error'] !== UPLOAD_ERR_NO_FILE) {
     $errors['document'] = "File upload error: " . getFileUploadErrorMessage($uploadFile['error']);
-} elseif ($uploadFile['size'] > MAX_FILE_SIZE) {
+} elseif ($hasNewFileUploaded && $uploadFile['size'] > MAX_FILE_SIZE) {
     $errors['document'] = "The uploaded file exceeds the maximum allowed size of " . formatFileSize(MAX_FILE_SIZE);
 }
 
-// Validate file type
-if ($uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
+// Validate file type only for new uploads
+if ($hasNewFileUploaded) {
     $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     $allowedExtensions = ['pdf', 'doc', 'docx', 'txt'];
     
@@ -181,7 +186,8 @@ if (!empty($errors)) {
 
 $message = '';
 
-if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
+// Process for new file upload
+if (!empty($title) && $hasNewFileUploaded) {
     if ($uploadFile['size'] > MAX_FILE_SIZE) {
         $message = "Error: The uploaded file exceeds the maximum allowed size of " . formatFileSize(MAX_FILE_SIZE) . ".";
         
@@ -323,6 +329,63 @@ if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
     } else {
         error_log("Failed to move uploaded file to: " . $targetFilePath);
         $message = "Error: Failed to save the uploaded file.";
+    }
+}
+
+// Process when updating document with existing file (no new upload)
+else if (!empty($title) && $isUpdate && $hasExistingFile) {
+    try {
+        // Load existing document
+        $document = Document::getById($documentId);
+        if (!$document || $document->user_id != $userId) {
+            throw new Exception("Document not found or you don't have permission to edit it");
+        }
+        
+        // Update document properties
+        $document->title = $title;
+        $document->description = $description;
+        $document->created_date = $createdDate;
+        $document->category_id = $categoryId;
+        
+        // Keep existing file properties
+        $document->file_path = $_POST['existing_file_path'];
+        $document->filename = $_POST['existing_filename'] ?? $document->filename;
+        $document->file_type = $_POST['existing_file_type'] ?? $document->file_type;
+        $document->file_size = $_POST['existing_file_size'] ?? $document->file_size;
+        
+        $document->save();
+        
+        $documentDetails = [
+            'id' => $document->id,
+            'title' => $title,
+            'description' => $description,
+            'upload_date' => $document->upload_date,
+            'created_date' => $createdDate,
+            'category_id' => $categoryId,
+            'file_path' => $document->file_path,
+            'file_name' => $document->filename,
+            'filename' => $document->filename,
+            'file_size' => $document->file_size,
+            'file_type' => $document->file_type,
+            'user_id' => $userId
+        ];
+        
+        error_log("Document updated with existing file: " . print_r($documentDetails, true));
+        
+        // Format size for readability
+        $documentDetails['file_size'] = formatFileSize($document->file_size); 
+        
+        view('create/success.view.php', [
+            'documentDetails' => $documentDetails,
+            'pageTitle' => 'Update Successful',
+            'users' => $users,
+            'userDocCounts' => $userDocCounts,
+            'currentUserId' => $userId
+        ]);
+        exit;
+    } catch (Exception $e) {
+        error_log("Error updating document: " . $e->getMessage());
+        $message = "Error: " . $e->getMessage();
     }
 }
 

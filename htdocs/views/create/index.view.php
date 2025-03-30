@@ -41,7 +41,7 @@ $categories = $categories ?? [];
           
           <div class="upload-form__line">
             <label for="title" class="upload-form__line-title">Document Title:</label>
-            <input type="text" name="title" id="title" class="upload-form__line-input <?= isset($errors['title']) ? 'is-invalid' : '' ?>" required maxlength="70" value="<?= htmlspecialchars($document->title) ?>">
+            <input type="text" name="title" id="title" class="upload-form__line-input <?= isset($errors['title']) ? 'is-invalid' : '' ?>" required maxlength="70" value="<?= htmlspecialchars($document->title ?? $_POST['title'] ?? $documentTitle ?? '') ?>">
             <?php if (isset($errors['title'])) : ?>
             <div class="error-message">
               <?= htmlspecialchars($errors['title']) ?>
@@ -58,6 +58,10 @@ $categories = $categories ?? [];
                 <div class="current-file-info">
                   <p><strong>Current file:</strong> <?= basename(htmlspecialchars($document->file_path)) ?></p>
                   <small>Select a new file only if you want to replace the current one</small>
+                  <input type="hidden" name="existing_file_path" value="<?= htmlspecialchars($document->file_path) ?>">
+                  <input type="hidden" name="existing_filename" value="<?= htmlspecialchars($document->filename) ?>">
+                  <input type="hidden" name="existing_file_type" value="<?= htmlspecialchars($document->file_type) ?>">
+                  <input type="hidden" name="existing_file_size" value="<?= htmlspecialchars($document->file_size) ?>">
                 </div>
               <?php endif; ?>
               <?php if (isset($errors['document'])) : ?>
