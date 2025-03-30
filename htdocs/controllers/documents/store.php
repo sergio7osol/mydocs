@@ -49,11 +49,41 @@ if (empty($category)) {
     $category = 'Personal';
 }
 
+// Get category ID from name
+$categoryId = null;
+if (!empty($category)) {
+    error_log("Document upload - Category value: '" . $category . "', Length: " . mb_strlen($category));
+    
+    // Get valid categories from DB
+    $validCategories = Category::getAll();
+    error_log("Document upload - Valid categories: " . print_r(array_column($validCategories, 'name'), true));
+    
+    // Check if the category name exists in the valid categories
+    $categoryExists = false;
+    foreach ($validCategories as $validCategory) {
+        if (strcasecmp($validCategory['name'], $category) === 0) {
+            $categoryExists = true;
+            $categoryId = $validCategory['id'];
+            error_log("Document upload - Category '" . $category . "' is valid, ID: " . $categoryId);
+            break;
+        }
+    }
+    
+    // If category doesn't exist, use default (Personal)
+    if (!$categoryExists) {
+        error_log("Document upload - Category '" . $category . "' not found, using default");
+        $categoryId = Category::getIdByName('Personal');
+        if (!$categoryId) {
+            // Fallback to first category if 'Personal' doesn't exist
+            $categoryId = $validCategories[0]['id'] ?? 1;
+        }
+    }
+}
+
 $createdDate = isset($_POST['created_date']) && !empty($_POST['created_date']) ? $_POST['created_date'] : null;
 
 error_log("Document upload - POST data received: " . print_r($_POST, true));
 error_log("Document upload - GET data received: " . print_r($_GET, true));
-error_log("Document upload - Category value: '" . $category . "', Length: " . mb_strlen($category));
 
 $errors = [];
 
@@ -97,27 +127,6 @@ if (!$user) {
     $userId = $user->id;
 }
    
-// Validate category exists in database
-$validCategories = Category::getAll();
-$categoryValid = false;
-
-error_log("Document upload - Valid categories: " . print_r(array_column($validCategories, 'name'), true));
-
-foreach ($validCategories as $validCategory) {
-    if ($validCategory['name'] === $category) {
-        $categoryValid = true;
-        error_log("Document upload - Category '" . $category . "' is valid");
-        break;
-    }
-}
-
-if (!$categoryValid) {
-    $errors['category'] = "Selected category does not exist";
-    // Fallback to default category if invalid
-    error_log("Document upload - Category '" . $category . "' is not valid, falling back to 'Personal'");
-    $category = 'Personal';
-}
-
 // Validate created date format if provided
 if (!empty($createdDate)) {
     $dateTimestamp = strtotime($createdDate);
@@ -202,7 +211,7 @@ if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
     // Create category-specific directory structure
     $targetPath = getenv('DOCKER_ENV') === 'true' ? '/var/www/html/uploads/' : base_path('uploads/');
     $userPath = $targetPath . $userId . '/';
-    $categoryPath = $userPath . $category . '/';
+    $categoryPath = $userPath . $categoryId . '/';
     
     if (!file_exists($targetPath)) {
         mkdir($targetPath, 0777, true);
@@ -248,7 +257,7 @@ if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
                 $document->title = $title;
                 $document->description = $description;
                 $document->created_date = $createdDate;
-                $document->category = $category;
+                $document->category_id = $categoryId;
                 
                 // Only update file properties if a new file was uploaded
                 if ($uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
@@ -265,7 +274,7 @@ if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
                     $description,            
                     date('Y-m-d H:i:s'),     // upload_date
                     $createdDate,            
-                    $category,               
+                    $categoryId,             // category_id
                     $targetFilePath,         
                     $targetFileName,         
                     $uploadFile['size'],     // file_size
@@ -282,7 +291,7 @@ if (!empty($title) && $uploadFile && $uploadFile['error'] === UPLOAD_ERR_OK) {
                 'description' => $description,
                 'upload_date' => date('Y-m-d H:i:s'),
                 'created_date' => $createdDate,
-                'category' => $category,
+                'category_id' => $categoryId,
                 'file_path' => $targetFilePath,
                 'file_name' => $targetFileName,
                 'file_size' => $uploadFile['size'],

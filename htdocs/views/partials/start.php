@@ -6,7 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title><?= htmlspecialchars($pageTitle) ?></title>
 	<link rel="stylesheet" href="/base.css">
-	<?php if (isset($styles)) echo $styles; ?>
+	<link rel="stylesheet" href="/css/category-tree.css">
+	<link rel="stylesheet" href="/css/document-list.css">
 </head>
 
 <body>

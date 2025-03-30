@@ -11,6 +11,23 @@ try {
 } catch (Exception $e) {
   $userName = 'User ' . $currentUserId;
 }
+
+// Get category name from category_id
+$categoryName = '';
+if (isset($documentDetails['category_id']) && !empty($documentDetails['category_id'])) {
+    // Load category from database
+    $categoryObj = null;
+    if (class_exists('Category')) {
+        try {
+            $categoryObj = Category::getById($documentDetails['category_id']);
+            if ($categoryObj) {
+                $categoryName = $categoryObj->name;
+            }
+        } catch (Exception $e) {
+            error_log("Error getting category name: " . $e->getMessage());
+        }
+    }
+}
 ?>
 
 <div class="upload-success">
@@ -28,7 +45,7 @@ try {
       </tr>
       <tr class="upload-success__row">
         <td class="upload-success__label">Category:</td>
-        <td class="upload-success__value"><?= htmlspecialchars($documentDetails['category']) ?></td>
+        <td class="upload-success__value"><?= htmlspecialchars($categoryName) ?></td>
       </tr>
       <tr class="upload-success__row">
         <td class="upload-success__label">File Name:</td>
@@ -67,7 +84,7 @@ try {
   </div>
   
   <div class="upload-success__actions">
-    <a href="/?route=list&category=<?= htmlspecialchars($documentDetails['category']) ?>&user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-primary">View Documents</a>
+    <a href="/?route=list&category=<?= htmlspecialchars($categoryName) ?>&user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-primary">View Documents</a>
     <a href="/document/create?user_id=<?= htmlspecialchars($documentDetails['user_id']) ?>" class="btn btn-success">Upload Another Document</a>
   </div>
 </div>

@@ -8,50 +8,123 @@ view('partials/start.php', [
     'userDocCounts' => $userDocCounts
 ]);
 ?>
-
-
 <aside class="sidebar">
-  <h2>Categories</h2>
-  <ul>
-    <?php
+  <h2 class="sidebar__title">Categories</h2>
+  <ul class="category-tree">
+    <?php 
+    /**
+     * Recursive function to render the category tree
+     */
+    function renderCategoryTree($categories, $parentId = null, $level = 0, $params) {
+      // Debug at beginning of function
+      if ($level === 0) {
+        error_log("In renderCategoryTree - selectedCategoryId: " . var_export($params['selectedCategoryId'], true));
+        error_log("In renderCategoryTree - currentCategory: " . var_export($params['currentCategory'], true));
+      }
+      
+      foreach ($categories as $category): 
+        // Check if this category has children
+        $hasChildren = isset($category['children']) && count($category['children']) > 0;
+        
+        // Determine if this category should be expanded by default
+        $isExpanded = false;
+        
+        if ($hasChildren) {
+          // Use cookies to remember expanded state (if exists)
+          $isExpanded = isset($_COOKIE["category_expanded_{$category['id']}"]) && 
+                       $_COOKIE["category_expanded_{$category['id']}"] === "true";
+          
+          // Also expand if the current selection is a descendant of this category
+          if ($params['selectedCategoryId']) {
+            foreach ($categories as $cat) {
+              if ($cat['id'] == $params['selectedCategoryId'] && 
+                  isset($cat['path']) && 
+                  strpos($cat['path'], $category['id'] . '/') === 0) {
+                $isExpanded = true;
+              }
+            }
+          }
+        }
 
-    foreach ($categories as $category): ?>
-      <li>
-        <a href="/?route=list&category=<?= urlencode($category['name']) ?>&user_id=<?= $currentUserId ?>"
-          class="<?= ($currentCategory === $category['name']) ? 'active-category' : '' ?>">
-          <?= htmlspecialchars($category['name']) ?>
-        </a>
-      </li>
-    <?php endforeach; ?>
-    <li class="add-category-item">
-      <a href="#" id="add-category-btn">
-        ➕ Category ❌
+          error_log("selectedCategoryId: " . var_export($params['selectedCategoryId'], true));
+          error_log("category['id']: " . var_export($category['id'], true));
+          error_log("selectedCategoryId is set: " . var_export(isset($params['selectedCategoryId']), true));
+          error_log("currentCategory: " . var_export($params['currentCategory'], true));
+          error_log("category['name']: " . var_export($category['name'], true));
+
+
+          // Determine if this category is active - compare both ID and name
+        $isActive = (int)$params['selectedCategoryId'] === (int)$category['id'] ||
+                   (!empty($params['currentCategory']) && strcasecmp($params['currentCategory'], $category['name']) === 0);
+      ?>
+        <li class="category-tree__item <?= $level > 0 ? 'category-tree__subcategory' : '' ?>" 
+            data-id="<?= $category['id'] ?>" 
+            data-level="<?= $level ?>">
+          
+          <div class="category-tree__item-content">
+            <?php if ($hasChildren): ?>
+              <span class="category-tree__toggle <?= $isExpanded ? 'category-tree__toggle--expanded' : 'category-tree__toggle--collapsed' ?>" 
+                    data-id="<?= $category['id'] ?>">
+                <?= $isExpanded ? '▼' : '►' ?>
+              </span>
+            <?php else: ?>
+              <span class="category-tree__toggle-spacer"></span>
+            <?php endif; ?>
+            
+            <a href="/?category=<?= urlencode(htmlspecialchars($category['name'])) ?>&user_id=<?= $params['currentUserId'] ?: 1 ?>"
+               class="category-tree__link <?= $isActive ? 'category-tree__link--active' : '' ?>">
+              <?= htmlspecialchars($category['name']) ?>
+              <span class="category-count"><?= isset($params['categoryDocCounts'][$category['id']]) ? $params['categoryDocCounts'][$category['id']] : 0 ?></span>
+            </a>
+          </div>
+          
+          <?php if ($hasChildren): ?>
+            <ul class="category-tree__subcategories <?= $isExpanded ? 'category-tree__subcategories--expanded' : 'category-tree__subcategories--collapsed' ?>">
+              <?php renderCategoryTree($category['children'], null, $level + 1, $params); ?>
+            </ul>
+          <?php endif; ?>
+        </li>
+      <?php endforeach;
+    }
+    
+    // Start rendering from root categories (parent_id is NULL)
+    renderCategoryTree($categories, null, 0, [
+      'selectedCategoryId' => $selectedCategoryId,
+      'currentCategory' => $currentCategory,
+      'currentUserId' => $currentUserId,
+      'categoryDocCounts' => $categoryDocCounts
+    ]);
+    ?>
+    <li class="category-tree__add-item">
+      <a href="#" id="add-category-btn" class="category-tree__add-link">
+        <span class="purple-plus">➕</span> Category <span class="delete-icon">❌</span>
       </a>
     </li>
   </ul>
 </aside>
+
 <main class="content">
   <?php
   $documentCount = count($documents);
 
-  error_log("Document count in view: " . $documentCount . " for user: " . $currentUserId . " and category: " . $currentCategory);
+  error_log("Document count in view: " . $documentCount . " for user: " . $currentUserId . " and category: " . ($currentCategory ?? 'All'));
   ?>
   <div class="content-header">
     <h1>Documents</h1>
-    <?php if (isset($currentCategory)): ?>
+    <?php if (isset($currentCategory) && !empty($currentCategory)): ?>
       <div class="category-header">
         <h2>
           Category: <?= htmlspecialchars($currentCategory) ?>
           <div class="document-counter">
             <div class="document-counter-inner">
               <span class="counter-number"><?= $documentCount ?></span>
-              <span class="counter-text">Documents</span>
+              <span class="counter-text">DOCUMENTS</span>
             </div>
           </div>
         </h2>
         <div class="category-actions">
-          <a href="/?route=list&user_id=<?= $currentUserId ?>" class="btn btn-outline show-all-btn">
-            📑 Show All Documents
+          <a href="/?route=list&user_id=<?= $currentUserId ?>" class="show-all-btn">
+            📄 Show All Documents
           </a>
         </div>
       </div>
@@ -62,108 +135,150 @@ view('partials/start.php', [
           <div class="document-counter">
             <div class="document-counter-inner">
               <span class="counter-number"><?= $documentCount ?></span>
-              <span class="counter-text">Documents</span>
+              <span class="counter-text">DOCUMENTS</span>
             </div>
           </div>
         </h2>
       </div>
     <?php endif; ?>
-
-    <form class="search-form" action="/" method="get">
-      <input type="hidden" name="route" value="list">
-      <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
-      <?php if (isset($currentCategory)): ?>
-        <input type="hidden" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
-      <?php endif; ?>
-      <input type="text" name="search" placeholder="Search documents" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>">
-      <button type="submit" class="search-button">Search</button>
-      <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="upload-button">Upload Document</a>
-    </form>
+    <div class="search-container">
+      <form action="/" method="GET" class="search-form">
+        <input type="hidden" name="route" value="list">
+        <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
+        <?php if (isset($currentCategory) && !empty($currentCategory)): ?>
+          <input type="hidden" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
+        <?php endif; ?>
+        <input type="text" name="search" placeholder="Search documents..." value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" class="form-control">
+        <button type="submit" class="btn btn--primary">Search</button>
+        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?><?= isset($currentCategory) && !empty($currentCategory) ? '&category=' . urlencode($currentCategory) : '' ?>" class="upload-button">Upload Document</a>
+      </form>
+    </div>
   </div>
 
-  <?php if (isset($_SESSION['success'])): ?>
-    <div class="alert alert-success">
-      <?= htmlspecialchars($_SESSION['success']) ?>
-      <?php unset($_SESSION['success']); ?>
-    </div>
-  <?php endif; ?>
-
-  <?php if (isset($_SESSION['error'])): ?>
-    <div class="alert alert-danger">
-      <?= htmlspecialchars($_SESSION['error']) ?>
-      <?php unset($_SESSION['error']); ?>
-    </div>
-  <?php endif; ?>
-
-  <div class="document-list" id="documentList">
-    <?php if (!empty($documents)): ?>
+  <?php if (empty($documents)): ?>
+    <?php if (isset($currentCategory) && !empty($currentCategory)): ?>
+      <div class="empty-state">
+        <div class="document-icon">📄</div>
+        <p>No documents found in category "<?= htmlspecialchars($currentCategory) ?>".</p>
+        <p class="sub-message">Upload a document to this category to see it here.</p>
+        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>&category=<?= urlencode($currentCategory) ?>" class="btn-primary">Upload to this category</a>
+      </div>
+    <?php else: ?>
+      <div class="empty-state">
+        <div class="document-icon">📄</div>
+        <p>No documents found.</p>
+        <p class="sub-message">Start by uploading a document using the form below.</p>
+        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn-primary">Upload a document</a>
+      </div>
+    <?php endif; ?>
+  <?php else: ?>
+    <div class="document-list" id="documentList">
       <?php foreach ($documents as $doc): ?>
         <div class="document-item" data-id="<?= $doc['id'] ?>" data-user-id="<?= $currentUserId ?>">
           <div class="document-item-content" onclick="window.location='/document/?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>'">
-            <div class="document-item-title-area">
-              <h3><?= htmlspecialchars($doc['title']) ?></h3>
-              <?php if (!empty($doc['description'])): ?>
-                <p class="document-description"><?= htmlspecialchars($doc['description']) ?></p>
-              <?php endif; ?>
+            <div class="document-icon">
+              <?php
+              $fileType = $doc['file_type'] ?? '';
+              $fileSymbol = '📄'; // Default document symbol
+              
+              if (strpos($fileType, 'pdf') !== false) {
+                $fileSymbol = '📕'; // PDF symbol
+              } elseif (strpos($fileType, 'image') !== false) {
+                $fileSymbol = '🖼️'; // Image symbol
+              } elseif (strpos($fileType, 'word') !== false || strpos($fileType, 'document') !== false) {
+                $fileSymbol = '📝'; // Word document symbol
+              } elseif (strpos($fileType, 'excel') !== false || strpos($fileType, 'spreadsheet') !== false) {
+                $fileSymbol = '📊'; // Excel/spreadsheet symbol
+              } elseif (strpos($fileType, 'text') !== false) {
+                $fileSymbol = '📃'; // Text file symbol
+              }
+              ?>
+              <span class="document-icon-symbol"><?= $fileSymbol ?></span>
             </div>
-            <span class="document-date"><span class="light-text">Created on:</span> <?= htmlspecialchars(!empty($doc['created_date']) ? $doc['created_date'] : $doc['upload_date']) ?></span>
-            <span class="document-category"><?= htmlspecialchars($doc['category']) ?></span>
-            <form method="POST" action="/document" class="document-item__delete-form" onsubmit="return confirm('Are you sure you want to delete this document?');" onclick="event.stopPropagation();">
+            <div class="document-details">
+              <h3 class="document-title"><?= htmlspecialchars($doc['title']) ?></h3>
+              <p class="document-description"><?= htmlspecialchars($doc['description'] ?? '') ?></p>
+              <div class="document-meta">
+                <span class="document-date">
+                  📅 <?= date('M d, Y', strtotime($doc['upload_date'])) ?>
+                </span>
+                <span class="document-category">
+                  📁 <?= htmlspecialchars($doc['category_path'] ?? ($doc['category_name'] ?? 'Uncategorized')) ?>
+                </span>
+                <span class="document-size">
+                  📦 <?= number_format($doc['file_size'] / 1024, 2) ?> KB
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="document-item__actions">
+            <a href="/document/edit?id=<?= $doc['id'] ?>&user_id=<?= $currentUserId ?>" class="document-item__btn document-item__btn--edit">
+              ✏️
+            </a>
+            <form method="POST" action="/document" onsubmit="return confirm('Are you sure you want to delete this document?');" onclick="event.stopPropagation();">
               <input type="hidden" name="_method" value="DELETE">
               <input type="hidden" name="id" value="<?= $doc['id'] ?>">
               <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
               <?php if (isset($currentCategory)): ?>
                 <input type="hidden" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
               <?php endif; ?>
-              <button type="submit" class="document-item__del-icon" title="Delete document" onclick="event.stopPropagation();">🗑️</button>
+              <button type="submit" class="document-item__btn document-item__btn--delete" title="Delete document" onclick="event.stopPropagation();" data-title="<?= htmlspecialchars($doc['title']) ?>">🗑️</button>
             </form>
           </div>
         </div>
       <?php endforeach; ?>
-
-      <?php if (isset($currentCategory)): ?>
-        <div class="category-upload-button-container">
-          <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?><?= isset($currentCategory) ? '&category=' . htmlspecialchars($currentCategory) : '' ?>" class="btn btn-primary">Upload to this category</a>
-        </div>
-      <?php endif; ?>
-
-    <?php elseif (isset($currentCategory)): ?>
-      <div class="empty-state">
-        📄
-        <p>No documents found in category "<?= htmlspecialchars($currentCategory) ?>".</p>
-        <p class="sub-message">Upload a document to this category to see it here.</p>
-        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>&category=<?= htmlspecialchars($currentCategory) ?>" class="btn btn-primary">Upload to this category</a>
-      </div>
-    <?php else: ?>
-      <div class="empty-state">
-        📄
-        <p>No documents found.</p>
-        <p class="sub-message">Start by uploading a document using the form below.</p>
-        <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn btn-primary">Upload a document</a>
-      </div>
-    <?php endif; ?>
-  </div>
+    </div>
+    
+    <div class="document-upload">
+      <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn btn--primary">
+        ➕ Upload New Document
+      </a>
+    </div>
+  <?php endif; ?>
 </main>
 
+<!-- Category Management Modal -->
 <div id="category-modal" class="modal">
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <h2>Manage Categories</h2>
+  <div class="modal__content">
+    <span class="modal__close">❌</span>
+    <h2 class="modal__title">Manage Categories</h2>
 
     <form id="add-category-form">
       <div class="form-group">
-        <input type="text" id="new-category-name" placeholder="New category name" required>
-        <button type="submit" class="btn btn-primary">Add Category</button>
+        <input type="text" id="new-category-name" placeholder="New category name" required class="form-control">
+        <select id="parent-category-select" class="form-select">
+          <option value="">-- Root Category --</option>
+          <?php foreach ($allCategories as $category): ?>
+            <option value="<?= $category['id'] ?>"><?= htmlspecialchars($category['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <button type="submit" class="btn btn--primary">➕ Save Category</button>
       </div>
     </form>
 
-    <div id="categories-list">
-      <h3>Current Categories</h3>
-      <ul>
-        <?php foreach ($categories as $category): ?>
-          <li>
-            <?= htmlspecialchars($category['name']) ?>
-            <button class="delete-category-btn" data-id="<?= $category['id'] ?>">🗑️</button>
+    <div class="categories-list">
+      <h3 class="categories-list__title">Current Categories</h3>
+      <ul class="categories-list__items">
+        <?php foreach ($allCategories as $category): ?>
+          <li class="categories-list__item">
+            <?php 
+            // Show indentation based on level
+            if (isset($category['parent_id']) && $category['parent_id']) {
+              // Find parent to display as reference
+              $parentName = "";
+              foreach ($allCategories as $parentCat) {
+                if ($parentCat['id'] == $category['parent_id']) {
+                  $parentName = $parentCat['name'];
+                  break;
+                }
+              }
+              echo htmlspecialchars($category['name']);
+              echo ' <span class="categories-list__parent-info">(under: ' . htmlspecialchars($parentName) . ')</span>';
+            } else {
+              echo '<strong>' . htmlspecialchars($category['name']) . '</strong>';
+            }
+            ?>
+            <button class="categories-list__delete-btn" data-id="<?= $category['id'] ?>">🗑️</button>
           </li>
         <?php endforeach; ?>
       </ul>
@@ -171,201 +286,14 @@ view('partials/start.php', [
   </div>
 </div>
 
-<style>
-  /* New styles for the upload button when documents exist */
-  .category-upload-button-container {
-    margin-top: 3rem;
-    padding: 15px;
-    text-align: center;
-    border-top: 1px solid #e0e0e0;
-  }
-
-  .category-upload-button-container .btn-primary {
-    display: inline-block;
-    padding: 8px 16px;
-    background-color: #4a6da7;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background-color 0.3s;
-  }
-
-  .category-upload-button-container .btn-primary:hover {
-    background-color: #3a5a8f;
-  }
-
-  /* Add category item styles */
-  .add-category-item {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 10px;
-  }
-
-  .add-category-item a {
-    color: #4a6da7;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .add-category-item a:hover {
-    color: #3a5a8f;
-  }
-
-  /* Modal styles */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
-  }
-
-  .modal-content {
-    background-color: #fff;
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 50%;
-    max-width: 500px;
-  }
-
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .close:hover {
-    color: #333;
-  }
-
-  #categories-list {
-    margin-top: 20px;
-  }
-
-  #categories-list ul {
-    list-style: none;
-    padding: 0;
-  }
-
-  #categories-list li {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .delete-category-btn {
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 5px 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .delete-category-btn:hover {
-    background-color: #ff0000;
-  }
-
-  .form-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  #new-category-name {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-
-  /* Confirmation dialog styles */
-  .confirmation-dialog {
-    display: none;
-    position: fixed;
-    z-index: 1001;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-
-  .confirmation-content {
-    background-color: #fff;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 80%;
-    max-width: 450px;
-    text-align: center;
-  }
-
-  .confirmation-content h3 {
-    margin-top: 0;
-    color: #d32f2f;
-  }
-
-  .confirmation-content p {
-    margin: 15px 0;
-  }
-
-  .confirmation-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-  }
-
-  .btn-confirm {
-    background-color: #d32f2f;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    cursor: pointer;
-  }
-
-  .btn-cancel {
-    background-color: #757575;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    cursor: pointer;
-  }
-
-  .btn-confirm:hover {
-    background-color: #b71c1c;
-  }
-
-  .btn-cancel:hover {
-    background-color: #616161;
-  }
-</style>
-
-<div id="confirmation-dialog" class="confirmation-dialog">
-  <div class="confirmation-content">
-    <h3>Delete Category</h3>
-    <p id="confirmation-message">Are you sure you want to delete this category?</p>
-    <div class="confirmation-actions">
-      <button id="confirm-delete" class="btn-confirm">Delete</button>
-      <button id="cancel-delete" class="btn-cancel">Cancel</button>
+<div class="confirmation-dialog" id="category-delete-confirmation">
+  <div class="confirmation-dialog__content">
+    <h3 class="confirmation-dialog__title">Confirm Category Deletion</h3>
+    <p class="confirmation-dialog__message">Are you sure you want to delete this category?</p>
+    <p id="category-delete-warning" class="confirmation-dialog__message"></p>
+    <div class="confirmation-dialog__actions">
+      <button id="confirm-category-delete" class="btn btn--confirm">➕ Delete</button>
+      <button id="cancel-category-delete" class="btn btn--cancel">❌ Cancel</button>
     </div>
   </div>
 </div>
@@ -375,10 +303,53 @@ view('partials/start.php', [
   document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('category-modal');
     const addCategoryBtn = document.getElementById('add-category-btn');
-    const closeBtn = document.querySelector('.close');
+    const closeBtn = document.querySelector('.modal__close');
+    
+    // Event listeners for category tree toggle icons
+    const toggleIcons = document.querySelectorAll('.category-tree__toggle');
+    
+    toggleIcons.forEach(icon => {
+      icon.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const categoryId = this.getAttribute('data-id');
+        const isExpanded = this.classList.contains('category-tree__toggle--expanded');
+        
+        // Toggle the icon appearance
+        if (isExpanded) {
+          this.classList.remove('category-tree__toggle--expanded');
+          this.classList.add('category-tree__toggle--collapsed');
+          this.innerHTML = '►';
+        } else {
+          this.classList.remove('category-tree__toggle--collapsed');
+          this.classList.add('category-tree__toggle--expanded');
+          this.innerHTML = '▼';
+        }
+        
+        // Toggle the subcategory visibility
+        const parentItem = this.closest('.category-tree__item');
+        const subcategoriesList = parentItem.querySelector('.category-tree__subcategories');
+        
+        if (subcategoriesList) {
+          if (isExpanded) {
+            subcategoriesList.classList.remove('category-tree__subcategories--expanded');
+            subcategoriesList.classList.add('category-tree__subcategories--collapsed');
+            
+            // Store collapsed state in cookie
+            document.cookie = `category_expanded_${categoryId}=false; path=/; max-age=31536000`;
+          } else {
+            subcategoriesList.classList.remove('category-tree__subcategories--collapsed');
+            subcategoriesList.classList.add('category-tree__subcategories--expanded');
+            
+            // Store expanded state in cookie
+            document.cookie = `category_expanded_${categoryId}=true; path=/; max-age=31536000`;
+          }
+        }
+      });
+    });
 
-    addCategoryBtn.addEventListener('click', function(e) {
-      e.preventDefault();
+    addCategoryBtn.addEventListener('click', function() {
       modal.style.display = 'block';
     });
 
@@ -386,151 +357,117 @@ view('partials/start.php', [
       modal.style.display = 'none';
     });
 
-    window.addEventListener('click', function(e) {
-      if (e.target === modal) {
+    window.addEventListener('click', function(event) {
+      if (event.target == modal) {
         modal.style.display = 'none';
       }
     });
 
-    // Add new category
+    // Add category form submission
     const addCategoryForm = document.getElementById('add-category-form');
-
     addCategoryForm.addEventListener('submit', function(e) {
       e.preventDefault();
-
+      
       const categoryName = document.getElementById('new-category-name').value;
-      if (!categoryName.trim()) return;
-
-      // Send AJAX request to add category
-      fetch('/?route=add_category', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: 'name=' + encodeURIComponent(categoryName),
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Refresh the page to show the new category
-            window.location.reload();
-          } else {
-            alert(data.error || 'Error adding category');
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while adding the category');
-        });
+      const parentCategoryId = document.getElementById('parent-category-select').value;
+      
+      // Add the category via AJAX
+      fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: categoryName,
+          parent_id: parentCategoryId || null
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Reload the page to show the new category
+          window.location.reload();
+        } else {
+          alert('Error adding category: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while adding the category.');
+      });
     });
 
-    // Handle confirmation dialog
-    const confirmationDialog = document.getElementById('confirmation-dialog');
-    const confirmDeleteBtn = document.getElementById('confirm-delete');
-    const cancelDeleteBtn = document.getElementById('cancel-delete');
-    const confirmationMessage = document.getElementById('confirmation-message');
+    // Delete category confirmation
+    const deleteCategoryBtns = document.querySelectorAll('.categories-list__delete-btn');
+    const categoryDeleteConfirmation = document.getElementById('category-delete-confirmation');
+    const categoryDeleteWarning = document.getElementById('category-delete-warning');
+    const confirmCategoryDelete = document.getElementById('confirm-category-delete');
+    const cancelCategoryDelete = document.getElementById('cancel-category-delete');
+    
+    let categoryIdToDelete = null;
 
-    let categoryToDelete = null;
-
-    // Cancel delete
-    cancelDeleteBtn.addEventListener('click', function() {
-      confirmationDialog.style.display = 'none';
-      categoryToDelete = null;
-    });
-
-    // Confirm delete
-    confirmDeleteBtn.addEventListener('click', function() {
-      if (!categoryToDelete) return;
-
-      // Send AJAX request to delete category
-      fetch('/?route=delete_category', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: 'id=' + encodeURIComponent(categoryToDelete),
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Refresh the page to update the categories list
-            window.location.reload();
-          } else {
-            alert(data.error || 'Error deleting category');
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while deleting the category');
-        });
-
-      // Hide confirmation dialog
-      confirmationDialog.style.display = 'none';
-    });
-
-    // Click outside to close confirmation dialog
-    window.addEventListener('click', function(e) {
-      if (e.target === confirmationDialog) {
-        confirmationDialog.style.display = 'none';
-        categoryToDelete = null;
-      }
-    });
-
-    // Delete category - show confirmation dialog with document count
-    const deleteBtns = document.querySelectorAll('.delete-category-btn');
-
-    deleteBtns.forEach(btn => {
+    deleteCategoryBtns.forEach(btn => {
       btn.addEventListener('click', function() {
         const categoryId = this.getAttribute('data-id');
+        categoryIdToDelete = categoryId;
 
         // First get the document count for this category
-        fetch('/?route=get_category_count', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'id=' + encodeURIComponent(categoryId),
-          })
+        fetch(`/api/categories/${categoryId}/documents/count`)
           .then(response => response.json())
           .then(data => {
-            if (data.success) {
-              const categoryName = data.name;
-              const documentCount = data.count;
-
-              // Update confirmation message with document count
-              let message = `Are you sure you want to delete the category "${categoryName}"?`;
-
-              if (documentCount > 0) {
-                message += `<br><br>This category contains <strong>${documentCount} document${documentCount !== 1 ? 's' : ''}</strong> that will also be deleted.`;
-              }
-
-              confirmationMessage.innerHTML = message;
-              categoryToDelete = categoryId;
-              confirmationDialog.style.display = 'block';
-            } else {
-              alert(data.error || 'Error getting category information');
+            let warningMessage = '';
+            
+            if (data.count > 0) {
+              warningMessage = `This will also delete ${data.count} document(s) in this category.`;
             }
+            
+            if (data.subcategories > 0) {
+              warningMessage += ` This will also delete ${data.subcategories} subcategories and all their documents.`;
+            }
+            
+            categoryDeleteWarning.textContent = warningMessage || 'No documents will be affected.';
+            categoryDeleteConfirmation.style.display = 'block';
           })
           .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while getting category information');
+            alert('An error occurred while checking category documents.');
           });
       });
+    });
+
+    confirmCategoryDelete.addEventListener('click', function() {
+      if (categoryIdToDelete) {
+        fetch(`/api/categories/${categoryIdToDelete}`, {
+          method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            window.location.reload();
+          } else {
+            alert('Error deleting category: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while deleting the category.');
+        });
+      }
+      
+      categoryDeleteConfirmation.style.display = 'none';
+    });
+
+    cancelCategoryDelete.addEventListener('click', function() {
+      categoryDeleteConfirmation.style.display = 'none';
     });
   });
 
   function changeUser(userId) {
     // Update user input
     document.getElementById('userInput').value = userId;
-
-    // If a category is already selected, preserve it when changing users
-    const currentCategory = "<?= $currentCategory ?>";
-    if (currentCategory) {
-      document.getElementById('categoryInput').value = currentCategory;
-    }
-
-    // Submit the form
-    document.getElementById('searchForm').submit();
+    
+    // Submit form
+    document.getElementById('userForm').submit();
   }
 </script>
 

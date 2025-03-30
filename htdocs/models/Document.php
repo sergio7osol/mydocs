@@ -4,24 +4,27 @@ class Document {
     public $id;
     public $title;
     public $description; 
-    public $upload_date;  // Changed from date
-    public $created_date; // The date the document was created (not when it was uploaded)
-    public $category;
+    public $upload_date;
+    public $created_date;
+    public $category_id;
+    public $old_category; // For backward compatibility with existing code
     public $file_path;    // Changed from filepath
     public $filename;
     public $file_size;
-    public $file_type;    // Added
-    public $user_id;      // Changed from user
+    public $file_type;
+    public $user_id;
+    public $category_name; 
 
     private static $db;
 
-    public function __construct($id = null, $title = '', $description = '', $upload_date = '', $created_date = null, $category = '', $file_path = '', $filename = '', $file_size = 0, $file_type = '', $user_id = 1) {
+    public function __construct($id = null, $title = '', $description = '', $upload_date = '', $created_date = null, $category_id = null, $file_path = '', $filename = '', $file_size = 0, $file_type = '', $user_id = 1) {
         $this->id = $id;
         $this->title = $title;
         $this->description = $description;
         $this->upload_date = $upload_date;
         $this->created_date = $created_date;
-        $this->category = $category;
+        $this->category_id = $category_id;
+        $this->old_category = ''; // Initialize for backward compatibility
         $this->file_path = $file_path;
         $this->filename = $filename;
         $this->file_size = $file_size;
@@ -56,13 +59,12 @@ class Document {
         
         $this->file_type = trim(mb_substr($this->file_type, 0, 50)); // file_type: VARCHAR(50)
         
-        // category: VARCHAR(50) - utf8mb4_unicode_ci
-        $this->category = trim($this->category);
-        error_log("Document upload - Category before processing: '" . $this->category . "', Length: " . mb_strlen($this->category));
-        if (mb_strlen($this->category) > 50) {
-            $this->category = mb_substr($this->category, 0, 47) . '...';
-            error_log("Document upload - Category truncated to: '" . $this->category . "', New length: " . mb_strlen($this->category));
-        }
+        // Store old_category field for backward compatibility (it's in the DB schema)
+        $this->old_category = is_string($this->old_category) ? trim(mb_substr($this->old_category, 0, 50)) : '';
+        
+        // category_id: INT(11)
+        $this->category_id = (int)$this->category_id;
+        error_log("Document upload - Category ID to save: " . $this->category_id);
         
         $this->user_id = (int)$this->user_id; // user_id: INT(11)
         
@@ -101,7 +103,7 @@ class Document {
                         description = :description,
                         upload_date = :upload_date,
                         created_date = :created_date,
-                        category = :category, 
+                        category_id = :category_id, 
                         file_path = :file_path,
                         filename = :filename,
                         file_size = :file_size,
@@ -114,7 +116,7 @@ class Document {
                 ':description' => $this->description,
                 ':upload_date' => $this->upload_date,
                 ':created_date' => $this->created_date,
-                ':category' => $this->category,
+                ':category_id' => $this->category_id,
                 ':file_path' => $this->file_path,
                 ':filename' => $this->filename,
                 ':file_size' => $this->file_size,
@@ -131,18 +133,18 @@ class Document {
             }
         } else {
             try {
-                $sql = "INSERT INTO documents (title, description, upload_date, created_date, category, file_path, filename, file_size, file_type, user_id) 
-                          VALUES (:title, :description, :upload_date, :created_date, :category, :file_path, :filename, :file_size, :file_type, :user_id)";
+                $sql = "INSERT INTO documents (title, description, upload_date, created_date, category_id, file_path, filename, file_size, file_type, user_id) 
+                          VALUES (:title, :description, :upload_date, :created_date, :category_id, :file_path, :filename, :file_size, :file_type, :user_id)";
                 
                 error_log("Executing SQL: " . $sql);
-                error_log("SQL Parameters - Title: '" . $this->title . "', Category: '" . $this->category . "'");
+                error_log("SQL Parameters - Title: '" . $this->title . "', Category ID: '" . $this->category_id . "'");
                 
                 $params = [
                     ':title' => $this->title,
                     ':description' => $this->description,
                     ':upload_date' => $this->upload_date,
                     ':created_date' => $this->created_date,
-                    ':category' => $this->category,
+                    ':category_id' => $this->category_id,
                     ':file_path' => $this->file_path,
                     ':filename' => $this->filename,
                     ':file_size' => $this->file_size,
@@ -170,13 +172,16 @@ class Document {
             throw new Exception("Database connection not established");
         }
 
-        $query = "SELECT * FROM documents";
+        // Join with categories table to get category information
+        $query = "SELECT d.*, c.name as category_name 
+                 FROM documents d
+                 LEFT JOIN categories c ON d.category_id = c.id";
         $params = [];
         
         if ($user) {
             // Handle both user ID (number) and legacy username (string)
             if (is_numeric($user)) {
-                $query .= " WHERE user_id = :user_id";
+                $query .= " WHERE d.user_id = :user_id";
                 $params[':user_id'] = $user;
             } else {
                 // Try to find the user ID by name/email for backward compatibility
@@ -185,7 +190,7 @@ class Document {
                     User::setDatabase(self::$db);
                     $userId = User::findUserIdByName($user);
                     if ($userId) {
-                        $query .= " WHERE user_id = :user_id";
+                        $query .= " WHERE d.user_id = :user_id";
                         $params[':user_id'] = $userId;
                     }
                 } catch (Exception $e) {
@@ -194,15 +199,10 @@ class Document {
             }
         }
         
-        $query .= " ORDER BY upload_date DESC";
+        $query .= " ORDER BY d.upload_date DESC";
         
-        try {
-            $statement = self::$db->query($query, $params);
-            $results = $statement->fetchAll(PDO::FETCH_ASSOC);
-            return $results;
-        } catch (Exception $e) {
-            throw $e;
-        }
+        $statement = self::$db->query($query, $params);
+        return $statement->fetchAll();
     }
 
     public static function getById($id, $userId = null) {
@@ -210,12 +210,15 @@ class Document {
             throw new Exception("Database connection not established");
         }
 
-        $query = "SELECT * FROM documents WHERE id = :id";
+        $query = "SELECT d.*, c.name as category_name 
+                 FROM documents d
+                 LEFT JOIN categories c ON d.category_id = c.id
+                 WHERE d.id = :id";
         $params = [':id' => $id];
         
         // If user ID is provided, ensure the document belongs to the user
         if ($userId !== null) {
-            $query .= " AND user_id = :user_id";
+            $query .= " AND d.user_id = :user_id";
             $params[':user_id'] = $userId;
         }
         
@@ -226,28 +229,33 @@ class Document {
             return null;
         }
         
-        return new Document(
+        $document = new Document(
             $data['id'],
             $data['title'],
             $data['description'],
             $data['upload_date'],
             $data['created_date'],
-            $data['category'],
+            $data['category_id'],
             $data['file_path'],
             $data['filename'],
             $data['file_size'],
             $data['file_type'],
             $data['user_id']
         );
+        
+        // Store the category name in a property for display purposes
+        $document->category_name = $data['category_name'] ?? 'Uncategorized';
+        
+        return $document;
     }
 
-    public static function getByCategory($category, $user = null) {
+    public static function getByCategory($category_id, $user = null) {
         if (!self::$db) {
             throw new Exception("Database connection not established");
         }
 
-        $query = "SELECT * FROM documents WHERE category = :category";
-        $params = [':category' => $category];
+        $query = "SELECT * FROM documents WHERE category_id = :category_id";
+        $params = [':category_id' => $category_id];
         
         if ($user) {
             // Handle both user ID (number) and legacy username (string)

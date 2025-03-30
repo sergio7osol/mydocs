@@ -52,7 +52,7 @@ view('partials/start.php', [
         <tr class="document-view__row">
           <td class="document-view__label">Category:</td>
           <td class="document-view__value">
-            <span class="document-view__category"><?= htmlspecialchars($document->category); ?></span>
+            <span class="document-view__category"><?= htmlspecialchars($document->category_name ?? 'Uncategorized'); ?></span>
           </td>
         </tr>
         <tr class="document-view__row">
@@ -100,10 +100,10 @@ view('partials/start.php', [
           </p>
           <div class="button-group">
             <button id="copyFileBtn" class="copy-button">
-              &#128196; Copy File Path
+              📄 Copy File Path
             </button>
             <button id="copyDirBtn" class="copy-button">
-              &#128193; Copy Folder Path
+              📁 Copy Folder Path
             </button>
           </div>
           </span>
@@ -189,22 +189,37 @@ view('partials/start.php', [
       <?php endif; ?>
     </div>
 
-    <section class="document-actions">
-      <a href="/document/edit?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="document-actions__button document-actions__button--edit">
-        <span class="document-actions__icon document-actions__icon--edit">✏️</span>
-        <span class="document-actions__text">Edit Document</span>
+    <section>
+      <a href="/document/edit?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>">
+        <span>✏️</span>
+        <span>Edit Document</span>
       </a>
-      <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="document-actions__button document-actions__button--download">
-        <span class="document-actions__icon document-actions__icon--download">📥</span>
-        <span class="document-actions__text">Download Document</span>
+      <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>">
+        <span>📥</span>
+        <span>Download Document</span>
       </a>
+      <button type="button" onclick="showDeleteModal()">
+        <span>🗑️</span>
+        <span>Delete Document</span>
+      </button>
     </section>
+
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <p>Are you sure you want to delete this document?</p>
+        <form method="POST" action="/document/delete?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>">
+          <button type="submit" class="modal-confirm">Delete</button>
+          <button type="button" class="modal-cancel" onclick="hideDeleteModal()">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="document-view__back">
+      <a href="/?user_id=<?= $currentUserId ?>" class="document-view__back-link-simple">Back to Document List</a>
+    </div>
   <?php else: ?>
     <p class="document-view__not-found">Document not found.</p>
   <?php endif; ?>
-  <div class="document-view__back">
-    <a href="/?user_id=<?= $currentUserId ?>" class="document-view__back-link-simple">Back to Document List</a>
-  </div>
 </div>
 
 <?php view('partials/end.php'); ?>

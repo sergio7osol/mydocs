@@ -32,7 +32,7 @@ if (!$document || $document->user_id != $userId) {
 }
 
 // Set preselected category from document
-$preselectedCategory = $document->category;
+$preselectedCategory = $document->category_id;
 
 // Load categories for the view
 require_once base_path('models/Category.php');

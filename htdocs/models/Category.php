@@ -56,6 +56,76 @@ class Category {
             throw $e;
         }
     }
+    
+    /**
+     * Get all categories and organize them into a hierarchical tree structure
+     * Using the path field for proper ancestry tracking
+     * 
+     * @return array Array of category data with level information for UI rendering
+     */
+    public static function getTree() {
+        if (!self::$db) {
+            throw new Exception("Database connection not established");
+        }
+        
+        // Get all categories with proper sorting to maintain hierarchy
+        $query = "SELECT * FROM categories WHERE is_active = 1 ORDER BY display_order, name ASC";
+        
+        try {
+            $statement = self::$db->query($query);
+            $allCategories = $statement->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Initialize result array for root categories
+            $result = [];
+            
+            // Sort categories to ensure parent categories come before children
+            usort($allCategories, function($a, $b) {
+                // Compare by level first
+                $levelA = isset($a['level']) ? (int)$a['level'] : 0;
+                $levelB = isset($b['level']) ? (int)$b['level'] : 0;
+                
+                if ($levelA !== $levelB) {
+                    return $levelA - $levelB;
+                }
+                
+                // Then by display_order
+                $orderA = isset($a['display_order']) ? (int)$a['display_order'] : 0;
+                $orderB = isset($b['display_order']) ? (int)$b['display_order'] : 0;
+                
+                if ($orderA !== $orderB) {
+                    return $orderA - $orderB;
+                }
+                
+                // Finally by name
+                return strcmp($a['name'], $b['name']);
+            });
+            
+            // Build the tree structure
+            foreach ($allCategories as &$category) {
+                // Mark root categories
+                if (empty($category['parent_id'])) {
+                    $result[] = &$category;
+                    continue;
+                }
+                
+                // For non-root categories, find and add to parent
+                foreach ($allCategories as &$potential_parent) {
+                    if ($potential_parent['id'] == $category['parent_id']) {
+                        if (!isset($potential_parent['children'])) {
+                            $potential_parent['children'] = [];
+                        }
+                        $potential_parent['children'][] = &$category;
+                        break;
+                    }
+                }
+            }
+            
+            return $result; // Return the hierarchical tree structure
+        } catch (Exception $e) {
+            error_log("Error in getTree(): " . $e->getMessage());
+            return [];
+        }
+    }
 
     public static function getById($id) {
         if (!self::$db) {
@@ -73,6 +143,32 @@ class Category {
         }
         
         return new Category($data['id'], $data['name']);
+    }
+
+    /**
+     * Find a category by name
+     * @param string $name The category name to search for
+     * @return int|null The ID of the category, or null if not found
+     */
+    public static function getIdByName($name) {
+        if (!self::$db) {
+            throw new Exception("Database connection not established");
+        }
+
+        $query = "SELECT id FROM categories WHERE name = :name";
+        $params = [':name' => $name];
+        
+        try {
+            $statement = self::$db->query($query, $params);
+            $result = $statement->fetch(PDO::FETCH_ASSOC);
+            
+            error_log("Category search for name: '$name', Result: " . print_r($result, true));
+            
+            return $result ? $result['id'] : null;
+        } catch (Exception $e) {
+            error_log("Error finding category by name: " . $e->getMessage());
+            return null;
+        }
     }
 
     public static function delete($id) {
