@@ -65,17 +65,6 @@ $router->route($uri, $method);
 
 // $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// if ($requestUri == '/doc/upload') {
-// 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-// 		$route = 'upload_post';
-// 	} else {
-// 		$route = 'upload';
-// 	}
-// } else {
-// 	// Original route determination for backward compatibility
-// 	$route = isset($_GET['route']) ? $_GET['route'] : 'list';
-// }
-
 
 // switch ($route) {
 // 	case 'list':

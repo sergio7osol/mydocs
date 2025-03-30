@@ -335,12 +335,7 @@ body, *:not(path), *::before, *::after {
     color: #666;
 }
 
-.document-item__delete-form {
-    display: inline-block;
-    margin-left: .5rem;
-}
-
-.document-item__del-icon {
+.document-item__btn {
     width: 32px;
     height: 32px;
     background-color: #f8f8f8;
@@ -358,24 +353,57 @@ body, *:not(path), *::before, *::after {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.document-item__del-icon:hover {
-    color: #ff3333;
+.document-item__btn:hover {
+    color: var(--color-secondary);
     background-color: #fff;
-    border-color: #ff3333;
-    box-shadow: 0 2px 5px rgba(255, 51, 51, 0.2);
+    border-color: var(--color-secondary);
+    box-shadow: 0 2px 5px rgba(33, 150, 243, 0.2); /* Using #2196F3 (--color-secondary) */
     transform: translateY(-1px);
 }
 
-.document-item__del-icon:active {
+.document-item__btn:active {
     transform: translateY(1px);
-    box-shadow: 0 0 2px rgba(255, 51, 51, 0.2);
-    background-color: #fff0f0;
+    box-shadow: 0 0 2px rgba(33, 150, 243, 0.2); /* Using #2196F3 (--color-secondary) */
+    background-color: #f0f8ff; /* Light blue tint instead of pink */
 }
 
-.document-item__del-icon:focus {
+.document-item__btn:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(255, 51, 51, 0.3);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3); /* Using #2196F3 (--color-secondary) */
 }
+
+.document-item__btn--delete:hover {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+    box-shadow: 0 2px 5px rgba(244, 67, 54, 0.2); /* Using --color-danger rgba */
+}
+
+.document-item__btn--delete:active {
+    box-shadow: 0 0 2px rgba(244, 67, 54, 0.2);
+    background-color: var(--color-danger-light);
+}
+
+.document-item__btn--delete:focus {
+    box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+}
+
+/* Edit button modifier */
+.document-item__btn--edit:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 5px rgba(76, 175, 80, 0.2); /* Using --color-primary rgba */
+}
+
+.document-item__btn--edit:active {
+    box-shadow: 0 0 2px rgba(76, 175, 80, 0.2);
+    background-color: rgba(76, 175, 80, 0.05); /* Light green tint */
+}
+
+.document-item__btn--edit:focus {
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+
 
 .download-button {
     display: inline-block;
@@ -659,7 +687,7 @@ body, *:not(path), *::before, *::after {
 }
 
 .document-counter:hover .document-counter-inner {
-    transform: perspective(200px) rotateX(0deg) translateY(-3px);
+    transform: perspective(200px) rotateX(0deg);
     box-shadow: 
         0 6px 20px rgba(0,0,0,0.4),
         0 1px 0 rgba(255,255,255,0.3) inset,
@@ -1134,60 +1162,6 @@ body, *:not(path), *::before, *::after {
     }
 }
 
-/* Document Actions Styles */
-.document-actions {
-    margin-top: var(--spacing-xl);
-    display: flex;
-    justify-content: space-between;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
-}
-
-.document-actions__button {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-md);
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-sm);
-}
-
-.document-actions__button:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.document-actions__button:active {
-    transform: translateY(0);
-}
-
-.document-actions__button--edit {
-    background-color: var(--color-primary);
-    color: var(--color-white);
-}
-
-.document-actions__button--edit:hover {
-    background-color: var(--color-primary-dark);
-}
-
-.document-actions__button--download {
-    background-color: var(--color-secondary);
-    color: var(--color-white);
-}
-
-.document-actions__button--download:hover {
-    background-color: var(--color-secondary-dark);
-}
-
-.document-actions__icon {
-    margin-right: var(--spacing-sm);
-}
-
-.document-actions__text {
-    white-space: nowrap;
-}
 
 /* Document View Styles */
 .document-view {
@@ -1373,23 +1347,6 @@ body, *:not(path), *::before, *::after {
 .document-view__back-link-simple::before {
     content: "←";
     margin-right: 4px;
-}
-
-/* Media queries for responsiveness */
-@media screen and (max-width: 768px) {
-    .document-view__label,
-    .document-view__value {
-        padding: var(--spacing-sm);
-    }
-    
-    .document-actions {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-    }
-    
-    .document-actions__button {
-        width: 100%;
-    }
 }
 
 /* Keep the existing copying styles but add BEM classes */

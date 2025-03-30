@@ -6,9 +6,9 @@ use Core\Auth;
 
 error_log("Document deletion - Starting deletion process");
 
-$userId = isset($_POST['user_id']) ? $_POST['user_id'] : null;
-$documentId = isset($_POST['id']) ? $_POST['id'] : null;
-$category = isset($_POST['category']) ? $_POST['category'] : '';
+$userId = $_POST['user_id'] ?? null;
+$documentId = $_POST['id'] ?? null;
+$category = $_POST['category'] ?? '';
 
 error_log("Document deletion - Parameters: userId=$userId, documentId=$documentId, category=$category");
 

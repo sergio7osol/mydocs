@@ -4,8 +4,8 @@ use Core\App;
 use Core\Auth;
 use Core\Database;
 
-$userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // ID 1 (Sergey)
-$documentId = isset($_GET['id']) ? $_GET['id'] : null;
+$userId = $_GET['user_id'] ?? 1; // ID 1 (Sergey)
+$documentId = $_GET['id'] ?? null;
 
 if (!$documentId) {
     header("Location: /?user_id={$userId}");
@@ -18,7 +18,6 @@ require_once base_path('controllers/DocumentController.php');
 
 $database = App::resolve(Database::class);
 
-// Create document controller with database connection
 $documentController = new DocumentController($database);
 
 // Load document for editing

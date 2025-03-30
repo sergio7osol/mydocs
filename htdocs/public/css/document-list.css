@@ -1,0 +1,206 @@
+/* Document List Component Styles - Using BEM methodology */
+/* Uses variables from base.css and adds component-specific ones */
+
+/* Component-specific variables */
+:root {
+  --document-list-spacing: var(--spacing-md);
+  --document-item-radius: var(--border-radius-md);
+  --document-item-transition: 0.3s ease;
+  --document-icon-size: 48px;
+  
+  /* Theme colors - using existing color system */
+  --document-item-bg: var(--color-white);
+  --document-item-border: var(--color-gray-300);
+  --document-item-hover-bg: var(--color-gray-100);
+  --document-item-active-border: #4a6da7;
+  
+  /* Text colors */
+  --document-title-color: var(--color-gray-900);
+  --document-meta-color: var(--color-gray-600);
+  
+  /* Icon colors based on document type */
+  --document-icon-pdf-color: #f40f02;
+  --document-icon-word-color: #2b579a;
+  --document-icon-excel-color: #217346;
+  --document-icon-image-color: #33a852;
+  --document-icon-default-color: #5f6368;
+}
+
+/* Document List Container */
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--document-list-spacing);
+  padding: var(--document-list-spacing) 0;
+  width: 100%;
+}
+
+/* Document Item */
+.document-item {
+  display: flex;
+  border: 1px solid var(--document-item-border);
+  border-radius: var(--document-item-radius);
+  background-color: var(--document-item-bg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all var(--document-item-transition);
+  position: relative;
+}
+
+.document-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--document-item-active-border);
+}
+
+.document-item:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 4px;
+  background-color: transparent;
+  transition: background-color var(--document-item-transition);
+}
+
+.document-item:hover:before {
+  background-color: var(--document-item-active-border);
+}
+
+/* Document Item Content (clickable area) */
+.document-item-content {
+  display: flex;
+  padding: 0 var(--spacing-md) 0 0;
+  flex-grow: 1;
+  cursor: pointer;
+  gap: var(--spacing-md);
+}
+
+/* Document Icon */
+.document-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--document-icon-size);
+  height: var(--document-icon-size);
+  font-size: calc(var(--document-icon-size) * 0.7);
+  color: var(--document-icon-default-color);
+  flex-shrink: 0;
+}
+
+.document-icon .fa-file-pdf {
+  color: var(--document-icon-pdf-color);
+}
+
+.document-icon .fa-file-word {
+  color: var(--document-icon-word-color);
+}
+
+.document-icon .fa-file-excel {
+  color: var(--document-icon-excel-color);
+}
+
+.document-icon .fa-file-image {
+  color: var(--document-icon-image-color);
+}
+
+.document-item__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+/* Document Details */
+.document-details {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.document-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--document-title-color);
+  margin: 0 0 var(--spacing-xs) 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-description {
+  font-size: 0.875rem;
+  color: var(--document-meta-color);
+  margin: 0 0 var(--spacing-sm) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+/* Document Metadata */
+.document-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  font-size: 0.75rem;
+  color: var(--document-meta-color);
+}
+
+.document-date,
+.document-category,
+.document-size {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.document-date i,
+.document-category i,
+.document-size i {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+.document-category {
+  border-radius: 20px;
+  padding: 2px 8px 2px 6px;
+  background-color: rgba(74, 109, 167, 0.1);
+  color: #4a6da7;
+}
+
+.view-btn:hover {
+  color: #4a6da7;
+}
+
+
+/* Document Upload Button */
+.document-upload {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.document-upload .btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  gap: var(--spacing-sm);
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+  .document-item {
+    flex-direction: column;
+  }
+  
+  .document-date,
+  .document-category,
+  .document-size {
+    font-size: 0.7rem;
+  }
+}
