@@ -69,7 +69,10 @@ class Category {
         }
         
         // Get all categories with proper sorting to maintain hierarchy
-        $query = "SELECT * FROM categories WHERE is_active = 1 ORDER BY display_order, name ASC";
+        $query = "SELECT c.*, p.name as parent_name FROM categories c 
+                 LEFT JOIN categories p ON c.parent_id = p.id 
+                 WHERE c.is_active = 1 
+                 ORDER BY CASE WHEN c.parent_id IS NULL THEN 0 ELSE 1 END, c.display_order, c.name ASC";
         
         try {
             $statement = self::$db->query($query);
@@ -77,6 +80,14 @@ class Category {
             
             // Initialize result array for root categories
             $result = [];
+            
+            // First pass: Make sure all categories have correct level based on parent_id
+            foreach ($allCategories as &$category) {
+                // Root categories should have level 0
+                if (empty($category['parent_id'])) {
+                    $category['level'] = 0;
+                }
+            }
             
             // Sort categories to ensure parent categories come before children
             usort($allCategories, function($a, $b) {
@@ -114,6 +125,10 @@ class Category {
                         if (!isset($potential_parent['children'])) {
                             $potential_parent['children'] = [];
                         }
+                        
+                        // Set the level for this child category based on parent's level
+                        $category['level'] = $potential_parent['level'] + 1;
+                        
                         $potential_parent['children'][] = &$category;
                         break;
                     }
