@@ -49,6 +49,7 @@
   padding: var(--spacing-xs) var(--spacing-xs);
   border-radius: var(--border-radius-sm);
   transition: background-color var(--category-tree-transition);
+  margin-left: .9rem;
 }
 
 .category-tree__link:hover {
@@ -86,7 +87,7 @@
   color: var(--color-gray-600);
   margin-right: var(--spacing-xs);
   user-select: none;
-  font-size: 10px;
+  font-size: 1rem;
   transition: transform var(--category-tree-transition);
 }
 
@@ -102,18 +103,15 @@
   transform: rotate(-90deg);
 }
 
-.category-tree__toggle-spacer {
-  display: inline-block;
-  width: .7rem;
-  margin-right: var(--spacing-xs);
-  margin-left: 1.7rem; 
-  border-top: 2px solid var(--color-gray-300);
+.category-tree .category-tree__item .category-tree__item .category-tree__toggle {
+  margin-left: 1.15rem;
 }
 
 /* Subcategories and nesting styles */
 .category-tree__subcategories {
   list-style: none;
   margin: 0;
+  --category-tree-indent: 1.6rem;
   padding-left: var(--category-tree-indent);
   overflow: hidden;
   transition: max-height var(--category-tree-transition) ease-out;
@@ -128,7 +126,35 @@
 }
 
 .category-tree__subcategory {
+  display: flex;
+  flex-direction: column;
   margin-left: 0;
+}
+
+.category-tree__subcategory .category-tree__item-content {
+  position: relative;
+}
+
+.category-tree__subcategory .category-tree__item-content::before {
+  content: "";
+  width: 2px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background-color: var(--color-gray-300);
+}
+
+.category-tree__subcategory .category-tree__item-content::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  width: .7rem;
+  height: 2px;
+  background-color: var(--color-gray-300);
 }
 
 /* Category count badge styling */

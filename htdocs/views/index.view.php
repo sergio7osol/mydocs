@@ -1,93 +1,111 @@
 <?php
 
 view('partials/start.php', [
-    'pageTitle' => $pageTitle,
-    'users' => $users,
-    'currentUserId' => $currentUserId,
-    'currentCategory' => $currentCategory ?? null,
-    'userDocCounts' => $userDocCounts
+  'pageTitle' => $pageTitle,
+  'users' => $users,
+  'currentUserId' => $currentUserId,
+  'currentCategory' => $currentCategory ?? null,
+  'userDocCounts' => $userDocCounts
 ]);
 ?>
 <aside class="sidebar">
   <h2 class="sidebar__title">Categories</h2>
   <ul class="category-tree">
-    <?php 
+    <?php
     /**
      * Recursive function to render the category tree
      */
-    function renderCategoryTree($categories, $parentId = null, $level = 0, $params) {
+    function renderCategoryTree($categories, $parentId = null, $level = 0, $params)
+    {
       // Debug at beginning of function
       if ($level === 0) {
         error_log("In renderCategoryTree - selectedCategoryId: " . var_export($params['selectedCategoryId'], true));
         error_log("In renderCategoryTree - currentCategory: " . var_export($params['currentCategory'], true));
       }
-      
-      foreach ($categories as $category): 
+
+      foreach ($categories as $category):
         // Check if this category has children
         $hasChildren = isset($category['children']) && count($category['children']) > 0;
-        
+
         // Determine if this category should be expanded by default
-        $isExpanded = false;
-        
+        $isExpanded = true; // Default to expanded
+
         if ($hasChildren) {
-          // Use cookies to remember expanded state (if exists)
-          $isExpanded = isset($_COOKIE["category_expanded_{$category['id']}"]) && 
-                       $_COOKIE["category_expanded_{$category['id']}"] === "true";
-          
           // Also expand if the current selection is a descendant of this category
           if ($params['selectedCategoryId']) {
             foreach ($categories as $cat) {
-              if ($cat['id'] == $params['selectedCategoryId'] && 
-                  isset($cat['path']) && 
-                  strpos($cat['path'], $category['id'] . '/') === 0) {
+              if (
+                $cat['id'] == $params['selectedCategoryId'] &&
+                isset($cat['path']) &&
+                strpos($cat['path'], $category['id'] . '/') === 0
+              ) {
                 $isExpanded = true;
               }
             }
           }
         }
 
-          error_log("selectedCategoryId: " . var_export($params['selectedCategoryId'], true));
-          error_log("category['id']: " . var_export($category['id'], true));
-          error_log("selectedCategoryId is set: " . var_export(isset($params['selectedCategoryId']), true));
-          error_log("currentCategory: " . var_export($params['currentCategory'], true));
-          error_log("category['name']: " . var_export($category['name'], true));
+        error_log("selectedCategoryId: " . var_export($params['selectedCategoryId'], true));
+        error_log("category['id']: " . var_export($category['id'], true));
+        error_log("selectedCategoryId is set: " . var_export(isset($params['selectedCategoryId']), true));
+        error_log("currentCategory: " . var_export($params['currentCategory'], true));
+        error_log("category['name']: " . var_export($category['name'], true));
 
-
-          // Determine if this category is active - compare both ID and name
+        // Determine if this category is active - compare both ID and name
         $isActive = (int)$params['selectedCategoryId'] === (int)$category['id'] ||
-                   (!empty($params['currentCategory']) && strcasecmp($params['currentCategory'], $category['name']) === 0);
-      ?>
-        <li class="category-tree__item <?= $level > 0 ? 'category-tree__subcategory' : '' ?>" 
-            data-id="<?= $category['id'] ?>" 
-            data-level="<?= $level ?>">
-          
+          (!empty($params['currentCategory']) && strcasecmp($params['currentCategory'], $category['name']) === 0);
+    ?>
+        <li class="category-tree__item <?= isset($category['parent_id']) && !empty($category['parent_id']) ? 'category-tree__subcategory' : '' ?>"
+          data-id="<?= $category['id'] ?>" 
+          data-level="<?= $level ?>">
+
           <div class="category-tree__item-content">
             <?php if ($hasChildren): ?>
-              <span class="category-tree__toggle <?= $isExpanded ? 'category-tree__toggle--expanded' : 'category-tree__toggle--collapsed' ?>" 
-                    data-id="<?= $category['id'] ?>">
+              <span class="category-tree__toggle <?= $isExpanded ? 'category-tree__toggle--expanded' : 'category-tree__toggle--collapsed' ?>"
+                data-id="<?= $category['id'] ?>">
                 <?= $isExpanded ? '▼' : '►' ?>
               </span>
-            <?php else: ?>
-              <span class="category-tree__toggle-spacer"></span>
             <?php endif; ?>
-            
+
             <a href="/?category=<?= urlencode(htmlspecialchars($category['name'])) ?>&user_id=<?= $params['currentUserId'] ?: 1 ?>"
-               class="category-tree__link <?= $isActive ? 'category-tree__link--active' : '' ?>">
+              class="category-tree__link <?= $isActive ? 'category-tree__link--active' : '' ?>">
               <?= htmlspecialchars($category['name']) ?>
               <span class="category-count"><?= isset($params['categoryDocCounts'][$category['id']]) ? $params['categoryDocCounts'][$category['id']] : 0 ?></span>
             </a>
           </div>
-          
+
           <?php if ($hasChildren): ?>
             <ul class="category-tree__subcategories <?= $isExpanded ? 'category-tree__subcategories--expanded' : 'category-tree__subcategories--collapsed' ?>">
               <?php renderCategoryTree($category['children'], null, $level + 1, $params); ?>
             </ul>
           <?php endif; ?>
         </li>
-      <?php endforeach;
+    <?php endforeach;
     }
-    
+
     // Start rendering from root categories (parent_id is NULL)
+    // Sort categories to ensure consistent ordering - place all root categories first
+    usort($categories, function($a, $b) {
+      // If one is a root category and the other isn't, the root category comes first
+      if (empty($a['parent_id']) && !empty($b['parent_id'])) {
+        return -1; // a should come before b 
+      }
+      if (!empty($a['parent_id']) && empty($b['parent_id'])) {
+        return 1; // b should come before a
+      }
+      
+      // If they're both root categories or both subcategories, sort by display_order
+      $orderA = isset($a['display_order']) ? (int)$a['display_order'] : 0;
+      $orderB = isset($b['display_order']) ? (int)$b['display_order'] : 0;
+      
+      if ($orderA !== $orderB) {
+        return $orderA - $orderB;
+      }
+      
+      // Finally sort by name if display order is the same
+      return strcmp($a['name'], $b['name']);
+    });
+    
     renderCategoryTree($categories, null, 0, [
       'selectedCategoryId' => $selectedCategoryId,
       'currentCategory' => $currentCategory,
@@ -122,11 +140,9 @@ view('partials/start.php', [
             </div>
           </div>
         </h2>
-        <div class="category-actions">
-          <a href="/?route=list&user_id=<?= $currentUserId ?>" class="show-all-btn">
-            📄 Show All Documents
-          </a>
-        </div>
+        <a href="/?route=list&user_id=<?= $currentUserId ?>" class="show-all-btn">
+          📄 Show All Documents
+        </a>
       </div>
     <?php else: ?>
       <div class="category-header">
@@ -180,7 +196,7 @@ view('partials/start.php', [
               <?php
               $fileType = $doc['file_type'] ?? '';
               $fileSymbol = '📄'; // Default document symbol
-              
+
               if (strpos($fileType, 'pdf') !== false) {
                 $fileSymbol = '📕'; // PDF symbol
               } elseif (strpos($fileType, 'image') !== false) {
@@ -222,15 +238,15 @@ view('partials/start.php', [
               <?php if (isset($currentCategory)): ?>
                 <input type="hidden" name="category" value="<?= htmlspecialchars($currentCategory) ?>">
               <?php endif; ?>
-              <button type="submit" class="document-item__btn document-item__btn--delete" title="Delete document" onclick="event.stopPropagation();" data-title="<?= htmlspecialchars($doc['title']) ?>">🗑️</button>
+              <button type="submit" class="document-item__btn document-item__btn--delete" title="Delete document" onclick="event.stopPropagation();">🗑️</button>
             </form>
           </div>
         </div>
       <?php endforeach; ?>
     </div>
-    
+
     <div class="document-upload">
-      <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>" class="btn btn--primary">
+      <a href="/document/create<?= isset($currentUserId) ? '?user_id=' . $currentUserId : '' ?>&category=<?= urlencode($currentCategory) ?>" class="btn btn--primary">
         ➕ Upload New Document
       </a>
     </div>
@@ -261,7 +277,7 @@ view('partials/start.php', [
       <ul class="categories-list__items">
         <?php foreach ($allCategories as $category): ?>
           <li class="categories-list__item">
-            <?php 
+            <?php
             // Show indentation based on level
             if (isset($category['parent_id']) && $category['parent_id']) {
               // Find parent to display as reference
@@ -304,18 +320,18 @@ view('partials/start.php', [
     const modal = document.getElementById('category-modal');
     const addCategoryBtn = document.getElementById('add-category-btn');
     const closeBtn = document.querySelector('.modal__close');
-    
+
     // Event listeners for category tree toggle icons
     const toggleIcons = document.querySelectorAll('.category-tree__toggle');
-    
+
     toggleIcons.forEach(icon => {
       icon.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const categoryId = this.getAttribute('data-id');
         const isExpanded = this.classList.contains('category-tree__toggle--expanded');
-        
+
         // Toggle the icon appearance
         if (isExpanded) {
           this.classList.remove('category-tree__toggle--expanded');
@@ -326,24 +342,18 @@ view('partials/start.php', [
           this.classList.add('category-tree__toggle--expanded');
           this.innerHTML = '▼';
         }
-        
+
         // Toggle the subcategory visibility
         const parentItem = this.closest('.category-tree__item');
         const subcategoriesList = parentItem.querySelector('.category-tree__subcategories');
-        
+
         if (subcategoriesList) {
           if (isExpanded) {
             subcategoriesList.classList.remove('category-tree__subcategories--expanded');
             subcategoriesList.classList.add('category-tree__subcategories--collapsed');
-            
-            // Store collapsed state in cookie
-            document.cookie = `category_expanded_${categoryId}=false; path=/; max-age=31536000`;
           } else {
             subcategoriesList.classList.remove('category-tree__subcategories--collapsed');
             subcategoriesList.classList.add('category-tree__subcategories--expanded');
-            
-            // Store expanded state in cookie
-            document.cookie = `category_expanded_${categoryId}=true; path=/; max-age=31536000`;
           }
         }
       });
@@ -367,34 +377,34 @@ view('partials/start.php', [
     const addCategoryForm = document.getElementById('add-category-form');
     addCategoryForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      
+
       const categoryName = document.getElementById('new-category-name').value;
       const parentCategoryId = document.getElementById('parent-category-select').value;
-      
+
       // Add the category via AJAX
       fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: categoryName,
-          parent_id: parentCategoryId || null
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Reload the page to show the new category
-          window.location.reload();
-        } else {
-          alert('Error adding category: ' + data.message);
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while adding the category.');
-      });
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: categoryName,
+            parent_id: parentCategoryId || null
+          }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Reload the page to show the new category
+            window.location.reload();
+          } else {
+            alert('Error adding category: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while adding the category.');
+        });
     });
 
     // Delete category confirmation
@@ -403,7 +413,7 @@ view('partials/start.php', [
     const categoryDeleteWarning = document.getElementById('category-delete-warning');
     const confirmCategoryDelete = document.getElementById('confirm-category-delete');
     const cancelCategoryDelete = document.getElementById('cancel-category-delete');
-    
+
     let categoryIdToDelete = null;
 
     deleteCategoryBtns.forEach(btn => {
@@ -416,15 +426,15 @@ view('partials/start.php', [
           .then(response => response.json())
           .then(data => {
             let warningMessage = '';
-            
+
             if (data.count > 0) {
               warningMessage = `This will also delete ${data.count} document(s) in this category.`;
             }
-            
+
             if (data.subcategories > 0) {
               warningMessage += ` This will also delete ${data.subcategories} subcategories and all their documents.`;
             }
-            
+
             categoryDeleteWarning.textContent = warningMessage || 'No documents will be affected.';
             categoryDeleteConfirmation.style.display = 'block';
           })
@@ -438,22 +448,22 @@ view('partials/start.php', [
     confirmCategoryDelete.addEventListener('click', function() {
       if (categoryIdToDelete) {
         fetch(`/api/categories/${categoryIdToDelete}`, {
-          method: 'DELETE',
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            window.location.reload();
-          } else {
-            alert('Error deleting category: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while deleting the category.');
-        });
+            method: 'DELETE',
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Error deleting category: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the category.');
+          });
       }
-      
+
       categoryDeleteConfirmation.style.display = 'none';
     });
 
@@ -465,7 +475,7 @@ view('partials/start.php', [
   function changeUser(userId) {
     // Update user input
     document.getElementById('userInput').value = userId;
-    
+
     // Submit form
     document.getElementById('userForm').submit();
   }

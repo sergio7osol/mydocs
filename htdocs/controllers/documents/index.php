@@ -181,10 +181,24 @@ $categoryDocCounts = [];
 foreach ($allDocuments as $doc) {
   if (isset($doc['category_id']) && !empty($doc['category_id'])) {
     $catId = $doc['category_id'];
+    
+    // Count for the current category
     if (!isset($categoryDocCounts[$catId])) {
       $categoryDocCounts[$catId] = 0;
     }
     $categoryDocCounts[$catId]++;
+    
+    // Also count for all parent categories (traverse up the hierarchy)
+    $parentId = $categoryParentIds[$catId] ?? null;
+    while ($parentId) {
+      if (!isset($categoryDocCounts[$parentId])) {
+        $categoryDocCounts[$parentId] = 0;
+      }
+      $categoryDocCounts[$parentId]++;
+      
+      // Move up to the next parent
+      $parentId = $categoryParentIds[$parentId] ?? null;
+    }
   }
 }
 

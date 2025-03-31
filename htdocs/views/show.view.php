@@ -3,11 +3,11 @@ $currentUserId = $currentUserId ?? (isset($_GET['user_id']) ? $_GET['user_id'] :
 $userName = $userName ?? ('User ' . $currentUserId);
 
 view('partials/start.php', [
-    'pageTitle' => $pageTitle ?? 'View Document',
-    'users' => $users,
-    'currentUserId' => $currentUserId,
-    'currentCategory' => $currentCategory ?? null,
-    'userDocCounts' => $userDocCounts
+  'pageTitle' => $pageTitle ?? 'View Document',
+  'users' => $users,
+  'currentUserId' => $currentUserId,
+  'currentCategory' => $currentCategory ?? null,
+  'userDocCounts' => $userDocCounts
 ]);
 ?>
 
@@ -74,16 +74,16 @@ view('partials/start.php', [
     <div class="document-view__content">
       <?php if (isset($document->filename) && pathinfo($document->filename, PATHINFO_EXTENSION) === 'txt'): ?>
         <h3 class="document-view__subtitle">Document Content:</h3>
-        <?php 
-          $absolutePath = getenv('DOCKER_ENV') === 'true' 
-            ? $document->file_path 
-            : base_path($localPath);
-          
-          if (file_exists($absolutePath)) {
-            echo '<pre class="document-view__text-content">' . htmlspecialchars(file_get_contents($absolutePath)) . '</pre>';
-          } else {
-            echo '<div class="document-view__error">Unable to display file content. The file may have been moved or deleted.</div>';
-          }
+        <?php
+        $absolutePath = getenv('DOCKER_ENV') === 'true'
+          ? $document->file_path
+          : base_path($localPath);
+
+        if (file_exists($absolutePath)) {
+          echo '<pre class="document-view__text-content">' . htmlspecialchars(file_get_contents($absolutePath)) . '</pre>';
+        } else {
+          echo '<div class="document-view__error">Unable to display file content. The file may have been moved or deleted.</div>';
+        }
         ?>
       <?php else: ?>
         <div class="document-view__file-info">
@@ -160,7 +160,7 @@ view('partials/start.php', [
                   console.error('Fallback copy error: ', err);
                   alert('Could not copy to clipboard');
                 }
-                
+
                 document.body.removeChild(textarea);
               }
             }
@@ -189,30 +189,28 @@ view('partials/start.php', [
       <?php endif; ?>
     </div>
 
-    <section>
-      <a href="/document/edit?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>">
-        <span>✏️</span>
-        <span>Edit Document</span>
+    <section class="document-actions">
+      <a href="/document/edit?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="document-actions__btn document-actions__btn--edit">
+        <span class="document-actions__icon">✏️</span>
+        <span class="document-actions__text">Edit Document</span>
       </a>
-      <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>">
-        <span>📥</span>
-        <span>Download Document</span>
+      <a href="/doc/download?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>" class="document-actions__btn document-actions__btn--download">
+        <span class="document-actions__icon">📥</span>
+        <span class="document-actions__text">Download Document</span>
       </a>
-      <button type="button" onclick="showDeleteModal()">
-        <span>🗑️</span>
-        <span>Delete Document</span>
-      </button>
+      <form method="POST" action="/document" class="document-actions__form" onsubmit="return confirm('Are you sure you want to delete this document?');" onclick="event.stopPropagation();">
+        <input type="hidden" name="_method" value="DELETE">
+        <input type="hidden" name="id" value="<?= $document->id ?>">
+        <input type="hidden" name="user_id" value="<?= $currentUserId ?>">
+        <?php if (isset($document->category_name)): ?>
+          <input type="hidden" name="category" value="<?= htmlspecialchars($document->category_name) ?>">
+        <?php endif; ?>
+        <button type="submit" class="document-actions__btn document-actions__btn--delete" title="Delete document" onclick="event.stopPropagation();">
+          <span class="document-actions__icon">🗑️</span>
+          <span class="document-actions__text">Delete Document</span>
+        </button>
+      </form>
     </section>
-
-    <div id="deleteModal" class="modal">
-      <div class="modal-content">
-        <p>Are you sure you want to delete this document?</p>
-        <form method="POST" action="/document/delete?id=<?= $document->id; ?>&user_id=<?= $currentUserId; ?>">
-          <button type="submit" class="modal-confirm">Delete</button>
-          <button type="button" class="modal-cancel" onclick="hideDeleteModal()">Cancel</button>
-        </form>
-      </div>
-    </div>
 
     <div class="document-view__back">
       <a href="/?user_id=<?= $currentUserId ?>" class="document-view__back-link-simple">Back to Document List</a>
