@@ -15,7 +15,7 @@ view('partials/start.php', [
     /**
      * Recursive function to render the category tree
      */
-    function renderCategoryTree($categories, $parentId = null, $level = 0, $params)
+    function renderCategoryTree($categories, $parentId = null, $level = 0, $params = [])
     {
       // Debug at beginning of function
       if ($level === 0) {
