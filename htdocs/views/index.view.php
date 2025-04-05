@@ -56,7 +56,7 @@ view('partials/start.php', [
           (!empty($params['currentCategory']) && strcasecmp($params['currentCategory'], $category['name']) === 0);
     ?>
         <li class="category-tree__item <?= isset($category['parent_id']) && !empty($category['parent_id']) ? 'category-tree__subcategory' : '' ?>"
-          data-id="<?= $category['id'] ?>" 
+          data-id="<?= $category['id'] ?>"
           data-level="<?= $level ?>">
 
           <div class="category-tree__item-content">
@@ -88,24 +88,24 @@ view('partials/start.php', [
     usort($categories, function($a, $b) {
       // If one is a root category and the other isn't, the root category comes first
       if (empty($a['parent_id']) && !empty($b['parent_id'])) {
-        return -1; // a should come before b 
+        return -1; // a should come before b
       }
       if (!empty($a['parent_id']) && empty($b['parent_id'])) {
         return 1; // b should come before a
       }
-      
+
       // If they're both root categories or both subcategories, sort by display_order
       $orderA = isset($a['display_order']) ? (int)$a['display_order'] : 0;
       $orderB = isset($b['display_order']) ? (int)$b['display_order'] : 0;
-      
+
       if ($orderA !== $orderB) {
         return $orderA - $orderB;
       }
-      
+
       // Finally sort by name if display order is the same
       return strcmp($a['name'], $b['name']);
     });
-    
+
     renderCategoryTree($categories, null, 0, [
       'selectedCategoryId' => $selectedCategoryId,
       'currentCategory' => $currentCategory,

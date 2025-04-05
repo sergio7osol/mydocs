@@ -1578,16 +1578,16 @@ body,
     --form-color-primary-dark: #2980b9;
     --form-color-text: #333;
     --form-color-border: #ddd;
-    
+
     /* Spacing variables */
     --form-spacing-xs: 0.25rem;
     --form-spacing-sm: 0.5rem;
     --form-spacing-md: 1rem;
     --form-spacing-lg: 1.5rem;
-    
+
     /* Border variables */
     --form-border-radius: 4px;
-    
+
     display: flex;
     flex-direction: column;
     gap: var(--form-spacing-md);
@@ -1605,7 +1605,7 @@ body,
     margin-bottom: var(--form-spacing-xs);
     font-weight: 500;
     color: var(--form-color-text);
-} 
+}
 
 .registration-form__input {
     padding: var(--form-spacing-sm);
