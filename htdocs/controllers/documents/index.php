@@ -1,7 +1,7 @@
 <?php
 
 use Core\App;
-use Core\Auth;
+use Core\Middleware\Auth;
 use Core\Database;
 
 require_once base_path('models/Category.php');

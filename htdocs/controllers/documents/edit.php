@@ -1,7 +1,7 @@
 <?php
 
 use Core\App;
-use Core\Auth;
+use Core\Middleware\Auth;
 use Core\Database;
 
 $userId = $_GET['user_id'] ?? 1; // ID 1 (Sergey)

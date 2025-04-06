@@ -1,6 +1,6 @@
 <?php
 
-require_once base_path('Core/Auth.php');
+require_once base_path('Core/Middleware/Auth.php');
 require_once base_path('Core/Validator.php');
 
 class DocumentController {
@@ -16,7 +16,7 @@ class DocumentController {
     {
         $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
         
-        \Core\Auth::checkPermissions($userId);
+        \Core\Middleware\Auth::checkPermissions($userId);
 
         self::clearDocumentCache();
         
@@ -203,7 +203,7 @@ class DocumentController {
      * @return bool True if user has permission, false otherwise
      */
     private function checkPermissions($userId) {
-        return \Core\Auth::checkPermissions($userId);
+        return \Core\Middleware\Auth::checkPermissions($userId);
     }
 
     public function showUploadForm() // V

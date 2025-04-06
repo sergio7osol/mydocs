@@ -2,6 +2,11 @@
 
 namespace Core;
 
+use Core\Middleware\Guest;
+use Core\Middleware\Auth;
+use Core\Middleware\Middleware;
+
+
 class Router {
   protected $routes = [];
   protected $database;
@@ -11,15 +16,15 @@ class Router {
   }
 
   public function get($uri, $controller) {
-    $this->add('GET', $uri, $controller);
+    return $this->add('GET', $uri, $controller);
   }
 
   public function post($uri, $controller) {
-    $this->add('POST', $uri, $controller);
+    return $this->add('POST', $uri, $controller);
   }
 
   public function delete($uri, $controller) { 
-    $this->add('DELETE', $uri, $controller);
+    return $this->add('DELETE', $uri, $controller);
   }  
 
   public function patch($uri, $controller) {
@@ -28,14 +33,24 @@ class Router {
       'controller' => $controller,
       'method' => 'PATCH'
     ];
+
+    return $this;
   }
 
-  public function put($uri, $controller) {
-    $this->routes[] = [
-      'uri' => $uri,
-      'controller' => $controller,
-      'method' => 'PUT'
-    ];
+	public function put($uri, $controller) {
+		$this->routes[] = [
+			'uri' => $uri,
+			'controller' => $controller,
+			'method' => 'PUT'
+		];
+
+		return $this;
+	}
+
+  public function only($key) {
+    $this->routes[array_key_last($this->routes)]['middleware'] = $key;
+
+		return $this;
   }
 
   public function route($uri, $method) {
@@ -47,21 +62,27 @@ class Router {
         if ($this->database) {
           $db = $this->database;
         }
+
+				if ($route['middleware']) {
+					Middleware::resolve($route['middleware']);
+				}
         
         return require_once base_path($route['controller']);
       }
     }
- 
-    $this->abort();
   }
 
-  public function add($method, $uri, $controller) {
-    $this->routes[] = [
-      'uri' => $uri,
-      'controller' => $controller,
-      'method' => $method
-    ];
-  }
+	public function add($method, $uri, $controller)
+	{
+		$this->routes[] = [
+			'uri' => $uri,
+			'controller' => $controller,
+			'method' => $method,
+			'middleware' => null
+		];
+
+		return $this;
+	}
 
   protected function abort($code = 404) {
     http_response_code($code);

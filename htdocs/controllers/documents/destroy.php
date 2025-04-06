@@ -2,7 +2,7 @@
 
 use Core\App;
 use Core\Database;
-use Core\Auth;
+use Core\Middleware\Auth;
 
 error_log("Document deletion - Starting deletion process");
 

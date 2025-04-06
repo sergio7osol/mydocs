@@ -25,8 +25,10 @@ set_exception_handler(function($exception) {
     error_log($message, 3, __DIR__ . '/php_errors.log');
     
     // Only display error message for real users, not for AJAX requests
-    if (!isset($_GET['ajax']) || $_GET['ajax'] !== 'true') {
-        echo "<h1>An error occurred</h1>";
-        echo "<p>We're sorry, but something went wrong. The error has been logged and will be addressed soon.</p>";
-    }
+//    if (!isset($_GET['ajax']) || $_GET['ajax'] !== 'true') {
+//        echo "<h1>An error occurred</h1>";
+//        echo "<p>We're sorry, but something went wrong. The error has been logged and will be addressed soon.</p>";
+//    }
+
+	echo $message;
 });
