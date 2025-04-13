@@ -64,6 +64,12 @@ body,
     padding: 0;
 }
 
+h2 {
+    font-weight: bold;
+    text-align: center;
+    margin-top: 1rem;
+}
+
 .main-container {
     display: flex;
     flex-direction: column;
@@ -185,7 +191,7 @@ body,
 
 .user-button {
     text-decoration: none;
-    padding: .45rem 1rem;
+    padding: .22rem .5rem;
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -200,6 +206,7 @@ body,
 }
 
 .user-selector div.active .user-button {
+    padding: .45rem 1rem;
     background-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 3px 5px rgba(150, 150, 150, 0.2);
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
@@ -233,7 +240,6 @@ body,
 }
 
 .sidebar {
-    width: 200px;
     background: #f4f4f4;
     padding: 1em 0;
 }

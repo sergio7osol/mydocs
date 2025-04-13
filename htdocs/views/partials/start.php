@@ -8,6 +8,7 @@
 	<link rel="stylesheet" href="/base.css">
 	<link rel="stylesheet" href="/css/category-tree.css">
 	<link rel="stylesheet" href="/css/document-list.css">
+	<link rel="stylesheet" href="/css/header.css">
 </head>
 
 <body>
