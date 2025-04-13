@@ -1,8 +1,8 @@
 <?php
 
 use Core\App;
-use Core\Middleware\Auth;
 use Core\Database;
+use Core\Middleware\Auth;
 
 $userId = $_GET['user_id'] ?? 1; // ID 1 (Sergey)
 $documentId = $_GET['id'] ?? null;

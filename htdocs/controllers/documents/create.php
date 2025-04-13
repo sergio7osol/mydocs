@@ -1,8 +1,8 @@
 <?php
 
 use Core\App;
-use Core\Middleware\Auth;
 use Core\Database;
+use Core\Middleware\Auth;
 
 $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1; // ID 1 (Sergey)
 $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';

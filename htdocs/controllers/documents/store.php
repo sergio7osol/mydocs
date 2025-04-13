@@ -1,9 +1,9 @@
 <?php
 
 use Core\App;
+use Core\Database;
 use Core\Middleware\Auth;
 use Core\Validator;
-use Core\Database;
 
 $userId = isset($_POST['user_id']) ? $_POST['user_id'] : (isset($_GET['user_id']) ? $_GET['user_id'] : 1);
 
