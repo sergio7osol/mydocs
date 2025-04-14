@@ -68,27 +68,27 @@ $router->route($uri, $method);
 
 // switch ($route) {
 // 	case 'download':
-// 		require_once base_path('controllers/DocumentController.php');
+// 		require_once base_path('Http/controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);
 // 		$controller->downloadDocument();
 // 		break;
 // 	case 'delete':
-// 		require_once base_path('controllers/DocumentController.php');
+// 		require_once base_path('Http/controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);
 // 		$controller->deleteDocument();
 // 		break;
 // 	case 'add_category':
-// 		require_once base_path('controllers/DocumentController.php');
+// 		require_once base_path('Http/controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);
 // 		$controller->addCategory();
 // 		break;
 // 	case 'delete_category':
-// 		require_once base_path('controllers/DocumentController.php');
+// 		require_once base_path('Http/controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);
 // 		$controller->deleteCategory();
 // 		break;
 // 	case 'get_category_count':
-// 		require_once base_path('controllers/DocumentController.php');
+// 		require_once base_path('Http/controllers/DocumentController.php');
 // 		$controller = new DocumentController($db);
 // 		$controller->getCategoryDocumentCount();
 // 		break;

@@ -10,7 +10,7 @@ $userId = isset($_GET['user_id']) ? $_GET['user_id'] : 1;
 
 Auth::checkPermissions($userId);
 
-require_once base_path('controllers/DocumentController.php');
+require_once base_path('Http/controllers/DocumentController.php');
 require_once base_path('models/Document.php');
 
 $database = App::resolve(Database::class);

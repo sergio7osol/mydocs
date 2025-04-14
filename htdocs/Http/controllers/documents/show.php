@@ -5,7 +5,7 @@ use Core\Database;
 
 require_once base_path('models/Document.php');
 require_once base_path('models/User.php');
-require_once base_path('controllers/DocumentController.php');
+require_once base_path('Http/controllers/DocumentController.php');
 
 $database = App::resolve(Database::class);
 

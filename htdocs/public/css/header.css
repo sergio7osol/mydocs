@@ -1,0 +1,63 @@
+.main-header {
+  --header-link-color: #ffffff;
+  --header-link-hover: #f0f0f0;
+  --header-link-bg: rgba(255, 255, 255, 0.1);
+  --header-link-padding: 0.5rem 1rem;
+  --header-link-radius: 4px;
+  --header-link-transition: all 0.2s ease;
+
+  --header-user-status-color: #e0e0e0;
+  --header-user-status-weight: 600;
+  --header-user-status-padding: 0.5rem 1rem;
+  --header-user-status-bg: rgba(0, 0, 0, 0.1);
+  --header-user-status-radius: 1.25rem;
+}
+
+.auth-links {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.auth-links__item {
+  display: flex;
+}
+
+.auth-links__link {
+  color: var(--header-link-color);
+  padding: var(--header-link-padding);
+  border-radius: var(--header-link-radius);
+  text-decoration: none;
+  transition: var(--header-link-transition);
+  display: inline-flex;
+  align-items: center;
+
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.auth-links__link:hover {
+  color: var(--header-link-hover);
+  background-color: var(--header-link-bg);
+  transform: translateY(-1px);
+}
+
+.auth-links__link:active {
+  transform: translateY(0);
+}
+
+.user-status {
+  color: var(--header-user-status-color);
+  font-weight: var(--header-user-status-weight);
+  padding: var(--header-user-status-padding);
+  background-color: var(--header-user-status-bg);
+  border-radius: var(--header-user-status-radius);
+  margin-right: 1rem; 
+  display: inline-flex; 
+  align-items: center; 
+  line-height: 1; 
+}

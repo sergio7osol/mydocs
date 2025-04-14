@@ -9,7 +9,7 @@ $userId = isset($_POST['user_id']) ? $_POST['user_id'] : (isset($_GET['user_id']
 
 Auth::checkPermissions($userId);
 
-require_once base_path('controllers/DocumentController.php');
+require_once base_path('Http/controllers/DocumentController.php');
 require_once base_path('models/Document.php');
 require_once base_path('models/User.php');
 require_once base_path('models/Category.php');

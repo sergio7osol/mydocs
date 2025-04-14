@@ -9,7 +9,7 @@ define('APP_ROOT', dirname(__DIR__));
 require_once base_path('debug/error_log.php');
 require_once base_path('Core/Database.php');
 require_once base_path('models/Document.php');
-require_once base_path('controllers/DocumentController.php');
+require_once base_path('Http/controllers/DocumentController.php');
 
 // Set error display for debugging
 ini_set('display_errors', 1);

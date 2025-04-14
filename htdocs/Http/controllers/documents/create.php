@@ -9,7 +9,7 @@ $preselectedCategory = isset($_GET['category']) ? $_GET['category'] : '';
 
 Auth::checkPermissions($userId);
 
-require_once base_path('controllers/DocumentController.php');
+require_once base_path('Http/controllers/DocumentController.php');
 
 $database = App::resolve(Database::class);
 
