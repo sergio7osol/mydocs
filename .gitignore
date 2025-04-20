@@ -1,6 +1,6 @@
 # Citizenship Docs Project .gitignore
 
-/vendor/
+htdocs/vendor/
 .env
 /storage/logs/
 /node_modules/

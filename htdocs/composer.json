@@ -1,0 +1,11 @@
+{
+    "name": "sergey_osokin/mydocs-docs",
+    "type": "project",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Core\\": "Core/",
+            "Http\\": "Http/"
+        }
+    }
+}

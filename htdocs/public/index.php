@@ -2,12 +2,16 @@
 
 use Core\Database;
 use Core\Router;
+use Core\Session;
+use Core\ValidationException;
 
 define('BASE_PATH', dirname(__DIR__) . '/'); // htdocs directory
 
 require_once BASE_PATH . 'Core/utils.php';
 include_once base_path('debug/error_log.php');
 // include('debug.php'); 
+
+require_once base_path('vendor/autoload.php');
 
 session_start(); // Start session for flash messages
 
@@ -17,13 +21,6 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
 putenv('DOCKER_ENV=true'); // Force Docker environment for now since we're running in Docker
-
-spl_autoload_register(function ($class) {
-	$file = str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
-	if (file_exists(BASE_PATH . $file)) {
-		require base_path($file);
-	}
-});
 
 require_once base_path('bootstrap.php');
 
@@ -58,7 +55,16 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
 
-$router->route($uri, $method);
+try {
+	$router->route($uri, $method);
+} catch (ValidationException $exception) {
+	Session::flash('errors', $exception->errors);
+	Session::flash('old', $exception->old);
+
+	return redirect($router->previousUrl());
+}
+
+Session::unflash();
  
 // $controller = new DocumentController($db);
 // $router->get('/', $controller->listDocuments());
