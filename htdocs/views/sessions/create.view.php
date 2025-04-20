@@ -12,7 +12,15 @@ view('partials/start.php', [
 	<form class="registration-form" action="/sessions" method="POST">
         <div class="registration-form__field">
             <label class="registration-form__label" for="email">Email Address</label>
-            <input class="registration-form__input" id="email" name="email" autocomplete="email" placeholder="Enter your email" required type="email">
+            <input
+                class="registration-form__input"
+                id="email"
+                name="email"
+                value="<?= old('email') ?>"
+                autocomplete="email"
+                placeholder="Enter your email"
+                required
+                type="email">
 
             <?php if (isset($errors['email'])) : ?>
                 <div class="error-message">
@@ -24,7 +32,7 @@ view('partials/start.php', [
 
 		<div class="registration-form__field">
 			<label class="registration-form__label" for="password">Password</label>
-			<input class="registration-form__input" id="password" name="password" autocomplete="current-password " placeholder="Enter your password" required type="password">
+			<input class="registration-form__input" id="password" name="password" autocomplete="current-password" placeholder="Enter your password" required type="password">
 
 			<?php if (isset($errors['password'])) : ?>
 				<div class="error-message">

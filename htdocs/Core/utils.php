@@ -25,6 +25,8 @@ function redirect($path) {
 	header("Location: {$path}");
 	exit();
 }
-  
 
-  
+function old($key, $value = '')
+{
+	return Core\Session::get('old')[$key] ?? $value;
+}

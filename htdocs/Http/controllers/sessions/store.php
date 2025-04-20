@@ -3,19 +3,15 @@
 use Core\Athenticator;
 use Http\Forms\LoginForm;
 
-$email = $_POST['email'];
-$password = $_POST['password'];
+$form = LoginForm::validate($attributes = [
+	'email' => $_POST['email'],
+	'password' => $_POST['password'],
+]);
 
-$form = new LoginForm();
+$signedIn = (new Athenticator())->attempt($attributes['email'], $attributes['password']);
 
-if ($form->validate($email, $password)) {
-	if ((new Athenticator)->attempt($email, $password)) {
-		redirect('/');
-	}
-
-	$form->addError('email', 'No account with that email address or password');
+if (!$signedIn) {
+	$form->addError('email', 'No account with that email address or password')->throw();
 }
 
-return view('sessions/create.view.php', [
-	'errors' => $form->getErrors()
-]);
+redirect('/');
